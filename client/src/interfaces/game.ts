@@ -1,5 +1,5 @@
-import Player from "@/interfaces/player";
-import Ticket from "@/interfaces/tickets";
+import type Player from "@/interfaces/player";
+import type Ticket from "@/interfaces/tickets";
 
 export default interface Game {
     players: Player[];

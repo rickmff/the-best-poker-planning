@@ -1,13 +1,36 @@
-const app = require('express')();
-const http = require('http').createServer(app);
-const short = require('short-uuid');
-require('dotenv').config()
-const io = require("socket.io")(http, {
+import express from 'express';
+import { createServer } from 'http';
+import { Server, Socket } from 'socket.io';
+import shortUuid from 'short-uuid';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const app = express();
+const http = createServer(app);
+const io = new Server(http, {
     cors: {
         origin: process.env.ORIGIN || 'http://localhost:8081',
         methods: ["GET", "POST"]
     }
 });
+
+interface Player {
+    id: string;
+    name: string;
+    roomId: string;
+    vote?: string;
+}
+
+interface Ticket {
+    id: string;
+    roomId: string;
+    votingOn: boolean;
+    score?: number;
+}
+
+let players: Player[] = [];
+let tickets: Ticket[] = [];
 
 // keeping the connection alive
 setInterval(() => {
@@ -24,22 +47,18 @@ http.listen(process.env.PORT || 3000, () => {
     console.log('listening on *:3000');
 });
 
-
-let players = [];
-let tickets = [];
-
-
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
     console.log('A user connected', socket.id);
-    let roomId = socket.handshake.query['roomId'];
+    let roomId = socket.handshake.query['roomId'] as string;
     if (!roomId) {
-        roomId = short.generate();
+        roomId = shortUuid.generate();
         socket.emit('room', roomId);
     }
     socket.join(roomId);
 
     players.push({id: socket.id, name: '', roomId: roomId});
-    socket.on('name', (name) => {
+
+    socket.on('name', (name: string) => {
         let player = players.find(p => p.id == socket.id);
         console.log(`User entered name ${name}`);
         if (player) {
@@ -49,12 +68,12 @@ io.on('connection', (socket) => {
         updateClientsInRoom(roomId);
     });
 
-    socket.on('vote', (vote) => {
+    socket.on('vote', (vote: string) => {
         let player = players.find(p => p.id == socket.id);
         if (player) {
             player.vote = vote;
         }
-        console.log(`Player ${player.name} voted ${player.vote}`);
+        console.log(`Player ${player?.name} voted ${player?.vote}`);
 
         const playersInRoom = players.filter(p => p.roomId == roomId);
         if (playersInRoom.every(p => p.vote)) {
@@ -71,7 +90,7 @@ io.on('connection', (socket) => {
         restartGame(roomId);
     });
 
-    socket.on('ticket', (updatedTickets) => {
+    socket.on('ticket', (updatedTickets: Ticket[]) => {
         tickets = tickets.filter(ticket => ticket.roomId !== roomId);
         for (const ticket of updatedTickets) {
             ticket.roomId = roomId;
@@ -86,20 +105,18 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         const player = players.find(player => player.id === socket.id);
-        console.log(`Player ${player.name} has disconnected`);
+        console.log(`Player ${player?.name} has disconnected`);
         players = players.filter(player => player.id !== socket.id);
         updateClientsInRoom(roomId);
     });
-
 
     // keeping the connection alive
     socket.on('pong', () => {
         let player = players.find(p => p.id == socket.id);
     })
-
 });
 
-function updateClientsInRoom(roomId) {
+function updateClientsInRoom(roomId: string): void {
     const roomPlayers = players.filter(p => p.roomId == roomId);
     const roomTickets = tickets.filter(p => p.roomId == roomId);
     io.to(roomId).emit('update', {
@@ -108,13 +125,13 @@ function updateClientsInRoom(roomId) {
     });
 }
 
-function restartGame(roomId) {
+function restartGame(roomId: string): void {
     const roomPlayers = players.filter(p => p.roomId == roomId);
     const roomTickets = tickets.filter(p => p.roomId == roomId);
     roomPlayers.forEach(p => p.vote = undefined);
 
     const ticketVotingOn = roomTickets.find(f => f.votingOn);
-    if (!(ticketVotingOn && !ticketVotingOn.score)) { // they haven't chosen a new ticket in wrapup
+    if (!(ticketVotingOn && !ticketVotingOn.score)) {
         roomTickets.forEach(p => p.votingOn = false);
         const ticketToVoteOn = roomTickets.find(t => !t.score);
         if (ticketToVoteOn) {
@@ -129,7 +146,7 @@ function restartGame(roomId) {
     });
 }
 
-function logRooms() {
+function logRooms(): void {
     const rooms = players.map(e => e.roomId);
     if (rooms) {
         for (const room of rooms.filter((val, i, arr) => arr.indexOf(val) == i)) {
@@ -139,7 +156,7 @@ function logRooms() {
     }
 }
 
-function showVotes(roomId) {
+function showVotes(roomId: string): void {
     const roomTickets = tickets.filter(p => p.roomId == roomId);
 
     if (roomTickets) {
@@ -164,7 +181,7 @@ function showVotes(roomId) {
     io.to(roomId).emit('show');
 }
 
-function getAverage(roomId) {
+function getAverage(roomId: string): number {
     const roomPlayers = players.filter(p => p.roomId == roomId);
     let count = 0;
     let total = 0;

@@ -126,7 +126,7 @@ function startGame() {
       alert("Looks like there's a problem connecting you to the server 😕");
     }
   }, 5000);
-  const newSocket = io(process.env.VUE_APP_SERVER);
+  const newSocket = io(import.meta.env.VITE_APP_API_URL);
   setSocket(newSocket);
   socket.value.on("room", (roomId: string) => {
     hasStarted.value = true;

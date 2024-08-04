@@ -1,7 +1,7 @@
 import {computed, ref} from "vue";
-import Ticket from "@/interfaces/tickets";
+import type Ticket from "@/interfaces/tickets";
 import {useGameEngine} from "@/composables/useGameEngine";
-let votingOnId = ref('');
+const votingOnId = ref('');
 const { tickets, socket } = useGameEngine();
 export function useTickets() {
     const votingOnName = computed(() => tickets.value.find((f: Ticket) => f.votingOn === true)?.name);

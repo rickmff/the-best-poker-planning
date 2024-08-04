@@ -7,7 +7,7 @@
     ></PFInput>
     <div class="tickets-container">
       <ul>
-        <li v-for="ticket in tickets">
+        <li v-for="ticket in tickets" :key="ticket.id">
           <div class="ticket" @click="voteOn(ticket)">
             <h4 :class="{ voting: ticket.votingOn }">
               {{ ticket.name }}
@@ -27,15 +27,13 @@
 
 <script setup lang="ts">
 import PFInput from "@/components/PFInput.vue";
-import { computed, ref, watch } from "vue";
+import { ref } from "vue";
 import { v4 as uuidv4 } from "uuid";
 import { useTickets } from "@/composables/useTickets";
-import Ticket from "@/interfaces/tickets";
-import { useGameEngine } from "@/composables/useGameEngine";
+import type Ticket from "@/interfaces/tickets";
 import PFLittleButton from "@/components/PFLittleButton.vue";
 
-const { tickets, votingOnId, ticketUpdated } = useTickets();
-const { countdown } = useGameEngine();
+const { tickets, ticketUpdated } = useTickets();
 
 let ticketName = ref("");
 

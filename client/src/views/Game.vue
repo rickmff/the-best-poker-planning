@@ -1,11 +1,7 @@
 <template>
   <div>
     <h1 class="screen-reader-only">Planfree.dev game lobby</h1>
-    <Modal
-      v-if="modal"
-      title="Choose your display name"
-      @completed="enteredName"
-    ></Modal>
+    <Modal v-if="modal" title="Choose your display name" @completed="enteredName"></Modal>
     <Sharing
       v-if="showShareModal"
       title="share_modal_title"
@@ -31,12 +27,8 @@
             </svg>
           </div>
         </button>
-        <button
-          v-if="!showCopiedToClipboard"
-          class="button invite"
-          @click="copyToClipboard()"
-        >
-          <div>{{ "Invite players" }}</div>
+        <button v-if="!showCopiedToClipboard" class="button invite" @click="copyToClipboard()">
+          <div>{{ 'Invite players' }}</div>
           <div>
             <svg
               width="24px"
@@ -50,18 +42,8 @@
                 stroke="#1C274C"
                 stroke-width="1.5"
               />
-              <path
-                d="M14 6.5L9 10"
-                stroke="#1C274C"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
-              <path
-                d="M14 17.5L9 14"
-                stroke="#1C274C"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
+              <path d="M14 6.5L9 10" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M14 17.5L9 14" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" />
               <path
                 d="M19 18.5C19 19.8807 17.8807 21 16.5 21C15.1193 21 14 19.8807 14 18.5C14 17.1193 15.1193 16 16.5 16C17.8807 16 19 17.1193 19 18.5Z"
                 stroke="#1C274C"
@@ -75,20 +57,12 @@
             </svg>
           </div>
         </button>
-        <button
-          v-if="!modal && showCopiedToClipboard"
-          class="button invite copied no-hover"
-        >
-          <div>{{ "copy_to_clip" }}</div>
+        <button v-if="!modal && showCopiedToClipboard" class="button invite copied no-hover">
+          <div>{{ 'copy_to_clip' }}</div>
           <div></div>
         </button>
         <button class="fib-button" @click="toggleTickets">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            viewBox="0 -960 960 960"
-            width="24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
             <path
               d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h440l200 200v440q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H600v-160H200v560Zm80-80h400v-80H280v80Zm0-320h200v-80H280v80Zm0 160h400v-80H280v80Zm-80-320v160-160 560-560Z"
             />
@@ -97,7 +71,7 @@
       </div>
 
       <div class="top-left">
-<!--         <PFLittleButton
+        <!--         <PFLittleButton
           type="github"
           popover-text="View repo"
           @clicked="goToGithub()"
@@ -118,18 +92,10 @@
       <button v-if="!playerHasVoted() && !showVotes" class="button no-hover">
         <span>Cast your votes</span>
       </button>
-      <button
-        v-if="playerHasVoted() && !showVotes"
-        class="button"
-        @click="showVotesClicked()"
-      >
+      <button v-if="playerHasVoted() && !showVotes" class="button" @click="showVotesClicked()">
         <span>Show votes!</span>
       </button>
-      <button
-        v-if="showVotes && countdown === 0"
-        class="button start"
-        @click="startNewGame()"
-      >
+      <button v-if="showVotes && countdown === 0" class="button start" @click="startNewGame()">
         <span>{{ startGameMessage }}</span>
       </button>
       <button v-if="showVotes && countdown > 0" class="button no-hover">
@@ -147,20 +113,7 @@
 
       <div class="options" v-if="!showVotes || (showVotes && countdown !== 0)">
         <button
-          v-for="vote in [
-            '0',
-            '1',
-            '2',
-            '3',
-            '5',
-            '8',
-            '13',
-            '21',
-            '34',
-            '55',
-            '89',
-            '?',
-          ]"
+          v-for="vote in ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '?']"
           :key="`vote-${vote}`"
           class="fib-button"
           :class="{ current: currentVote === vote }"
@@ -184,145 +137,132 @@
 </template>
 
 <script setup lang="ts">
-import Modal from "@/components/Modal.vue";
-import Player from "@/interfaces/player";
-import { io } from "socket.io-client";
-import { computed, onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import Tickets from "@/components/Tickets.vue";
-import { useTickets } from "@/composables/useTickets";
-import { useGameEngine } from "@/composables/useGameEngine";
-import PFLittleButton from "@/components/PFLittleButton.vue";
-import Sharing from "../components/SharingModal.vue";
+import Modal from '@/components/Modal.vue'
+import type Player from '@/interfaces/player'
+import { io } from 'socket.io-client'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import Tickets from '@/components/Tickets.vue'
+import { useTickets } from '@/composables/useTickets'
+import { useGameEngine } from '@/composables/useGameEngine'
+import Sharing from '@/components/SharingModal.vue'
 
-let showInstallPwa = ref(false);
-const modal = ref(true);
-const showCopiedToClipboard = ref(false);
-const name = ref("");
-const showTickets = ref(false);
-const { votingOnName, tickets } = useTickets();
-const { socket, setSocket, players, showVotes, countdown, currentVote } =
-  useGameEngine();
-const showShareModal = ref(false);
+let showInstallPwa = ref(false)
+const modal = ref(true)
+const showCopiedToClipboard = ref(false)
+const name = ref('')
+const showTickets = ref(false)
+const { votingOnName, tickets } = useTickets()
+const { socket, setSocket, players, showVotes, countdown, currentVote } = useGameEngine()
+const showShareModal = ref(false)
 
-let deferredPrompt: any;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallPwa.value = true;
-});
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault()
+  showInstallPwa.value = true
+})
 
 async function dismissModal() {
-  showShareModal.value = false;
-}
-
-function installPWA() {
-  deferredPrompt.prompt();
+  showShareModal.value = false
 }
 
 onMounted(() => {
   if (joiningAGame()) {
-    const route = useRoute();
-    const newSocket = io(process.env.VUE_APP_SERVER, {
+    const route = useRoute()
+    const newSocket = io(import.meta.env.VITE_APP_API_URL, {
       query: {
-        roomId: route.params.id,
-      },
-    });
-    setSocket(newSocket);
+        roomId: route.params.id
+      }
+    })
+    setSocket(newSocket)
   }
 
-  const storedName = localStorage.getItem("name");
+  const storedName = localStorage.getItem('name')
   if (storedName) {
-    enteredName(storedName);
+    enteredName(storedName)
   }
-});
+})
 
 const startGameMessage = computed(() => {
-  if (!tickets.value || tickets.value.every((t: { score: any; }) => t.score)) {
-    return "Start new game!";
+  if (!tickets.value || tickets.value.every((t: any) => t.score)) {
+    return 'Start new game!'
   } else {
-    return "Vote next issue!";
+    return 'Vote next issue!'
   }
-});
+})
 function showVotesClicked() {
-  socket.value.emit("show");
+  socket.value.emit('show')
 }
 
 function performVote(vote: string) {
-  socket.value.emit("vote", vote);
-  currentVote.value = vote;
+  socket.value.emit('vote', vote)
+  currentVote.value = vote
 }
 
 function startNewGame() {
-  socket.value.emit("restart");
+  socket.value.emit('restart')
 }
 
 function emitName(name: string) {
-  socket.value.emit("name", name);
+  socket.value.emit('name', name)
 }
 
 function enteredName(updatedName: string) {
-  name.value = updatedName;
-  emitName(updatedName);
-  localStorage.setItem("name", updatedName);
-  modal.value = false;
+  name.value = updatedName
+  emitName(updatedName)
+  localStorage.setItem('name', updatedName)
+  modal.value = false
 }
 
 function playerHasVoted() {
-  return (
-    players.value.filter((p: Player) => p.vote !== null && p.vote !== undefined)
-      .length > 0
-  );
+  return players.value.filter((p: Player) => p.vote !== null && p.vote !== undefined).length > 0
 }
 
 function copyToClipboard() {
-  showShareModal.value = true;
+  showShareModal.value = true
 }
 
 const average = computed(() => {
-  let count = 0;
-  let total = 0;
+  let count = 0
+  let total = 0
   for (const player of players.value) {
-    if (player.vote && player.vote !== "?") {
-      total += parseInt(player.vote);
-      count++;
+    if (player.vote && player.vote !== '?') {
+      total += parseInt(player.vote)
+      count++
     }
   }
-  return total / count;
-});
+  return total / count
+})
 
 function getAverage() {
-  return average.value.toFixed(1).replace(/\.0+$/, "");
+  return average.value.toFixed(1).replace(/\.0+$/, '')
 }
 
 function getClosest() {
-  const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-  let closest = 0;
-  let smallestDiff = Number.MAX_VALUE;
+  const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+  let closest = 0
+  let smallestDiff = Number.MAX_VALUE
   for (const number of fib) {
-    const difference = Math.abs(number - average.value);
+    const difference = Math.abs(number - average.value)
     if (difference < smallestDiff) {
-      smallestDiff = difference;
-      closest = number;
+      smallestDiff = difference
+      closest = number
     }
   }
-  return closest;
+  return closest
 }
 
 function goToGithub() {
-  open("https://github.com/LukeGarrigan/planfree.dev");
+  open('https://github.com/LukeGarrigan/planfree.dev')
 }
 
 function joiningAGame() {
-  const currentState = socket.value;
+  const currentState = socket.value
   return (
-    currentState &&
-    Object.keys(currentState).length === 0 &&
-    currentState.constructor === Object
-  );
+    currentState && Object.keys(currentState).length === 0 && currentState.constructor === Object
+  )
 }
 
-const toggleTickets = () => (showTickets.value = !showTickets.value);
+const toggleTickets = () => (showTickets.value = !showTickets.value)
 </script>
 
 <style scoped lang="scss">
@@ -344,7 +284,8 @@ const toggleTickets = () => (showTickets.value = !showTickets.value);
     width: 64px;
     height: 80px;
     background: #f3f0f1;
-    box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+    box-shadow:
+      -6px -6px 10px rgba(255, 255, 255, 0.8),
       6px 6px 10px rgba(0, 0, 0, 0.2);
     color: #161b1f;
     display: flex;
@@ -386,19 +327,22 @@ const toggleTickets = () => (showTickets.value = !showTickets.value);
   border: none;
   cursor: pointer;
   transition: all 0.1s ease-in-out;
-  box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+  box-shadow:
+    -6px -6px 10px rgba(255, 255, 255, 0.8),
     6px 6px 10px rgba(0, 0, 0, 0.2);
   color: #161b1f;
 
   &:hover {
     opacity: 0.3;
-    box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+    box-shadow:
+      -6px -6px 10px rgba(255, 255, 255, 0.8),
       6px 6px 10px rgba(0, 0, 0, 0.2);
   }
 
   &:active {
     opacity: 1;
-    box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.5),
+    box-shadow:
+      inset -4px -4px 8px rgba(255, 255, 255, 0.5),
       inset 8px 8px 16px rgba(0, 0, 0, 0.1);
   }
 }
@@ -412,7 +356,7 @@ const toggleTickets = () => (showTickets.value = !showTickets.value);
   gap: 5px;
 
   .voting-on {
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Montserrat', sans-serif;
     margin-left: 20px;
     font-size: 20px;
     display: flex;
@@ -480,7 +424,7 @@ const toggleTickets = () => (showTickets.value = !showTickets.value);
     }
 
     &:before {
-      content: "";
+      content: '';
       position: absolute;
       display: block;
       width: 100%;
@@ -515,7 +459,7 @@ const toggleTickets = () => (showTickets.value = !showTickets.value);
 }
 
 span {
-  font-family: "Montserrat", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 26px;
   font-weight: semibold;
   color: #161b1f;
@@ -544,11 +488,12 @@ span {
     width: 250px;
     height: 100px;
     transition: all 0.1s ease-in-out;
-    box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+    box-shadow:
+      -6px -6px 10px rgba(255, 255, 255, 0.8),
       6px 6px 10px rgba(0, 0, 0, 0.2);
 
     user-select: none;
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: semibold;
 
     &:focus {
@@ -585,20 +530,23 @@ span {
   width: 64px;
   height: 70px;
   transition: all 0.1s ease-in-out;
-  box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+  box-shadow:
+    -6px -6px 10px rgba(255, 255, 255, 0.8),
     6px 6px 10px rgba(0, 0, 0, 0.2);
   color: #161b1f;
 
   &:not(.current) {
     &:hover {
       opacity: 0.3;
-      box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
+      box-shadow:
+        -6px -6px 10px rgba(255, 255, 255, 0.8),
         6px 6px 10px rgba(0, 0, 0, 0.2);
     }
 
     &:active {
       opacity: 1;
-      box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.5),
+      box-shadow:
+        inset -4px -4px 8px rgba(255, 255, 255, 0.5),
         inset 8px 8px 16px rgba(0, 0, 0, 0.1);
     }
   }

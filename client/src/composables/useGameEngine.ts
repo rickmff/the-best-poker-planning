@@ -1,7 +1,7 @@
-import {computed, ref} from "vue";
-import Player from "@/interfaces/player";
-import Game from "@/interfaces/game";
-import Ticket from "@/interfaces/tickets";
+import { ref} from "vue";
+import type Player from "@/interfaces/player";
+import type Game from "@/interfaces/game";
+import type Ticket from "@/interfaces/tickets";
 const players = ref<Player[]>([]);
 const socket = ref({} as any);
 const showVotes = ref(false);
