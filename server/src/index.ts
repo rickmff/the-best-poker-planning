@@ -10,7 +10,7 @@ const app = express();
 const http = createServer(app);
 const io = new Server(http, {
     cors: {
-        origin: process.env.ORIGIN || 'http://localhost:8081',
+        origin: process.env.ORIGIN || "*",
         methods: ["GET", "POST"]
     }
 });

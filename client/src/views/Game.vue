@@ -71,17 +71,6 @@
       </div>
 
       <div class="top-left">
-        <!--         <PFLittleButton
-          type="github"
-          popover-text="View repo"
-          @clicked="goToGithub()"
-        ></PFLittleButton>
-        <PFLittleButton
-          type="pwa"
-          popover-text="Install as app"
-          @clicked="installPWA()"
-        ></PFLittleButton> -->
-
         <div class="voting-on" v-if="votingOnName">
           <p class="voting-on-label">
             Voting on: <b>{{ votingOnName }}</b>

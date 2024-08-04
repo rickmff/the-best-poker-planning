@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <title>Planning Poker</title>
+    <title>The Best Poker Planning</title>
     <router-view/>
   </div>
 </template>
