@@ -262,7 +262,7 @@
 
 <script setup lang="ts">
 import { ref, defineEmits } from "vue";
-import QrcodeVue, { Level, RenderAs } from "qrcode.vue";
+import QrcodeVue, { type Level, type RenderAs } from "qrcode.vue";
 
 const value = ref("");
 const showQRCode = ref(false);
@@ -282,7 +282,7 @@ function close() {
 }
 
 async function copyLink() {
-  value.value = undefined;
+  value.value = "";
   navigator.clipboard.writeText(window.location.href);
   close();
 }
