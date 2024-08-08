@@ -1,258 +1,215 @@
 <template>
-  <div class="home">
-    <div class="container">
-      <div class="free-poker-header">
-        <h1>Scrum poker made simple and <span>free</span>.</h1>
-      </div>
-      <div class="start-game">
-        <button
-          class="button"
-          :class="{ disabled: clickedStart }"
-          @click="startGame()"
-        >
-          <span v-if="!clickedStart">Create room</span>
-          <svg
-            v-if="clickedStart"
-            version="1.1"
-            id="Layer_1"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            x="0px"
-            y="0px"
-            width="24px"
-            height="30px"
-            viewBox="0 0 24 30"
-            style="enable-background: new 0 0 50 50"
-            xml:space="preserve"
-          >
-            <rect x="0" y="10" width="4" height="10" fill="#333" opacity="0.2">
-              <animate
-                attributeName="opacity"
-                attributeType="XML"
-                values="0.2; 1; .2"
-                begin="0s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="height"
-                attributeType="XML"
-                values="10; 20; 10"
-                begin="0s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="y"
-                attributeType="XML"
-                values="10; 5; 10"
-                begin="0s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-            </rect>
-            <rect x="8" y="10" width="4" height="10" fill="#333" opacity="0.2">
-              <animate
-                attributeName="opacity"
-                attributeType="XML"
-                values="0.2; 1; .2"
-                begin="0.15s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="height"
-                attributeType="XML"
-                values="10; 20; 10"
-                begin="0.15s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="y"
-                attributeType="XML"
-                values="10; 5; 10"
-                begin="0.15s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-            </rect>
-            <rect x="16" y="10" width="4" height="10" fill="#333" opacity="0.2">
-              <animate
-                attributeName="opacity"
-                attributeType="XML"
-                values="0.2; 1; .2"
-                begin="0.3s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="height"
-                attributeType="XML"
-                values="10; 20; 10"
-                begin="0.3s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="y"
-                attributeType="XML"
-                values="10; 5; 10"
-                begin="0.3s"
-                dur="0.6s"
-                repeatCount="indefinite"
-              />
-            </rect>
-          </svg>
-        </button>
-      </div>
-    </div>
+  <canvas
+    ref="canvasRef"
+    :width="canvasSize.width"
+    :height="canvasSize.height"
+    class="particle-canvas"
+  />
+  <div class="absolute top-0 left-2/4 -translate-x-1/2 flex flex-col items-center justify-center h-screen text-white">
+    <h1 class="text-7xl font-semibold mb-10">The Poker planning</h1>
+    <Button
+      variant="outline"
+      size="xl"
+      class="bg-secondary border-border rounded-full hover:bg-secondary/80"
+      @click="startGame()"
+    >
+      <span v-if="!clickedStart" class="text-3xl text-white/80">Create room</span>
+      <Loader2 v-if="clickedStart" class="w-8 h-8 animate-spin" />
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
-import router from "@/router";
-import { io } from "socket.io-client";
-import { ref } from "vue";
-import { useGameEngine } from "@/composables/useGameEngine";
-const { socket, setSocket } = useGameEngine();
-const clickedStart = ref(false);
-const hasStarted = ref(false);
+import router from '@/router'
+import { io } from 'socket.io-client'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useGameEngine } from '@/composables/useGameEngine'
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-vue-next'
+
+const { socket, setSocket } = useGameEngine()
+const clickedStart = ref(false)
+const hasStarted = ref(false)
 
 function startGame() {
-  clickedStart.value = true;
+  clickedStart.value = true
   setTimeout(() => {
     if (!hasStarted.value) {
-      alert("Looks like there's a problem connecting you to the server 😕");
+      alert("Looks like there's a problem connecting you to the server 😕")
     }
-  }, 5000);
-  const newSocket = io(import.meta.env.VITE_APP_API_URL);
-  setSocket(newSocket);
-  socket.value.on("room", (roomId: string) => {
-    hasStarted.value = true;
-    router.push({ path: `/game/${roomId}` });
-  });
+  }, 5000)
+  const newSocket = io(import.meta.env.VITE_APP_API_URL)
+  setSocket(newSocket)
+  socket.value.on('room', (roomId: string) => {
+    hasStarted.value = true
+    router.push({ path: `/game/${roomId}` })
+  })
 }
+class Particle {
+  private x: number = 0
+  private y: number = 0
+  private speed: number = 0.1
+  private opacity: number = 1
+  private fadeDelay: number
+  private fadeStart: number
+  private fadingOut: boolean
+
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private ctx: CanvasRenderingContext2D
+  ) {
+    this.reset()
+    this.y = Math.random() * canvas.height
+    this.fadeDelay = Math.random() * 600 + 100
+    this.fadeStart = Date.now() + this.fadeDelay
+    this.fadingOut = false
+  }
+
+  reset(): void {
+    this.x = Math.random() * this.canvas.width
+    this.y = Math.random() * this.canvas.height
+    this.speed = Math.random() / 5 + 0.1
+    this.opacity = 1
+    this.fadeDelay = Math.random() * 600 + 100
+    this.fadeStart = Date.now() + this.fadeDelay
+    this.fadingOut = false
+  }
+
+  update(): void {
+    this.y -= this.speed
+    if (this.y < 0) {
+      this.reset()
+    }
+    if (!this.fadingOut && Date.now() > this.fadeStart) {
+      this.fadingOut = true
+    }
+    if (this.fadingOut) {
+      this.opacity -= 0.008
+      if (this.opacity <= 0) {
+        this.reset()
+      }
+    }
+  }
+
+  draw(): void {
+    this.ctx.fillStyle = `rgba(${255 - Math.random() * 255}, 255, 255, ${this.opacity})`
+    this.ctx.fillRect(this.x, this.y, 0.4, Math.random() * 2 + 1)
+  }
+}
+
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasSize = ref({
+  width: window.innerWidth,
+  height: window.innerHeight
+})
+
+const particleCount = computed(() =>
+  Math.floor((canvasSize.value.width * canvasSize.value.height) / 4000)
+)
+
+let ctx: CanvasRenderingContext2D | null = null
+let particles: Particle[] = []
+let animationFrameId: number | null = null
+
+const updateCanvasSize = (): void => {
+  canvasSize.value = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+  if (canvasRef.value) {
+    canvasRef.value.width = canvasSize.value.width
+    canvasRef.value.height = canvasSize.value.height
+  }
+}
+
+const initParticles = (): void => {
+  particles = []
+  if (canvasRef.value && ctx) {
+    for (let i = 0; i < particleCount.value; i++) {
+      particles.push(new Particle(canvasRef.value, ctx))
+    }
+  }
+}
+
+const animate = (): void => {
+  if (ctx && canvasRef.value) {
+    ctx.clearRect(0, 0, canvasSize.value.width, canvasSize.value.height)
+    particles.forEach((particle) => {
+      particle.update()
+      particle.draw()
+    })
+    animationFrameId = requestAnimationFrame(animate)
+  }
+}
+
+const onResize = (): void => {
+  updateCanvasSize()
+  initParticles()
+}
+
+onMounted(() => {
+  if (canvasRef.value) {
+    ctx = canvasRef.value.getContext('2d')
+    if (ctx) {
+      updateCanvasSize()
+      initParticles()
+      animate()
+      window.addEventListener('resize', onResize)
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+  }
+  window.removeEventListener('resize', onResize)
+})
 </script>
 
 <style scoped lang="scss">
-.home {
-  display: flex;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
-}
 
-.container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 800px;
-}
-
-.free-poker-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  height: 80%;
-  width: 100%;
-
-  h1 {
-    user-select: none;
-    font-size: 3.2em;
-
-    span {
-      color: #54e8dd;
-      background: black;
-      border-radius: 10px;
-      width: 7rem;
-      display: inline-block;
-    }
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
-.start-game {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 80%;
-  position: relative;
-}
-
-.button {
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  z-index: 9999;
-  width: 320px;
-  height: 80px;
-  background: #f3f0f1;
-  border-radius: 32px;
-  text-align: center;
-  border: none;
-  cursor: pointer;
-  transition: all 0.1s ease-in-out;
-  box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
-    6px 6px 10px rgba(0, 0, 0, 0.2);
-  color: #161b1f;
-
-  &:hover {
-    opacity: 0.3;
-    box-shadow: -6px -6px 10px rgba(255, 255, 255, 0.8),
-      6px 6px 10px rgba(0, 0, 0, 0.2);
-  }
-
-  &:active {
-    opacity: 1;
-    box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.5),
-      inset 8px 8px 16px rgba(0, 0, 0, 0.1);
-  }
-
-  span {
-    font-family: "Montserrat", sans-serif;
-    font-size: 26px;
-    font-weight: semibold;
+@for $i from 1 through 6 {
+  .word:nth-child(#{$i}) {
+    filter: blur(20px);
+    opacity: 0;
+    animation:
+      1.5s ease-out #{$i * 0.2 + 1}s forwards fadingIn,
+      1.5s ease-out #{$i * -0.2 + 5}s forwards fadingOut;
   }
 }
 
-.disabled {
-  opacity: 1;
-  box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.5),
-    inset 8px 8px 16px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    opacity: 1;
-    box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.5),
-      inset 8px 8px 16px rgba(0, 0, 0, 0.1);
+@keyframes fadingIn {
+  0% {
+    filter: blur(20px);
+    opacity: 0;
+  }
+  100% {
+    filter: blur(0px);
+    opacity: 0.9;
   }
 }
 
-svg rect {
-  fill: #54e8dd;
-}
-
-@media only screen and (max-width: 800px) {
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 800px;
+@keyframes fadingOut {
+  0% {
+    filter: blur(0px);
+    opacity: 0.9;
   }
-
-  .free-poker-header {
-    width: 90%;
-    align-items: flex-end;
-  }
-
-  .start-game {
-    align-items: flex-start;
+  100% {
+    filter: blur(20px);
+    opacity: 0;
   }
 }
 </style>
