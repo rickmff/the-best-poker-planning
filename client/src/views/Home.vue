@@ -5,8 +5,13 @@
     :height="canvasSize.height"
     class="particle-canvas"
   />
-  <div class="absolute top-0 left-2/4 -translate-x-1/2 flex flex-col items-center justify-center h-screen text-white">
-    <h1 class="text-7xl font-semibold mb-10">The Poker planning</h1>
+  <div
+    class="absolute top-0 left-2/4 font-mono -translate-x-1/2 flex flex-col items-center justify-center h-screen text-white"
+  >
+    <h1 class="relative text-7xl mb-10">
+      <span class="absolute bottom-5 -left-20 text-3xl text-white/50">The</span> Poker planning
+    </h1>
+
     <Button
       variant="outline"
       size="xl"
@@ -168,7 +173,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-
 @keyframes gradientAnimation {
   0% {
     background-position: 0% 50%;

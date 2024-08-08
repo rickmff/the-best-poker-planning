@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="py-20">
     <h1 class="sr-only">The poker planning</h1>
     <Sharing
       v-if="showShareModal"

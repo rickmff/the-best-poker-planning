@@ -11,7 +11,7 @@ html, body {
   margin: 0;
   box-sizing: border-box;
   background: #080808;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Mono', sans-serif;
   overflow: hidden;
 }
 </style>
