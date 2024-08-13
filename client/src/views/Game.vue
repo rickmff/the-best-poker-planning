@@ -1,35 +1,7 @@
 <template>
   <div class="py-20">
     <h1 class="sr-only">The poker planning</h1>
-    <Sharing
-      v-if="showShareModal"
-      title="share_modal_title"
-      subTitle="share_modal_subtitle"
-      @dismissModal="dismissModal"
-    ></Sharing>
-    <div v-if="!modal && !showShareModal" class="flex justify-center h-full w-full box-border">
-      <div class="absolute top-8 right-8 flex space-x-4">
-<!--         <div class="flex items-center space-x-2 bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
-          {{ name }}
-          <Input ></Input>
-        </div> -->
-        <button
-          v-if="!showCopiedToClipboard"
-          @click="copyToClipboard()"
-          class="bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600"
-        >
-          Invite players
-        </button>
-        <button
-          v-if="!modal && showCopiedToClipboard"
-          class="bg-green-500 text-white rounded-lg px-4 py-2 cursor-default"
-        >
-          {{ 'copy_to_clip' }}
-        </button>
-        <!--         <button @click="toggleTickets" class="bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
-          Toggle Tickets
-        </button> -->
-      </div>
+    <div class="flex justify-center h-full w-full box-border">
 
       <div class="absolute top-8 left-8">
         <div v-if="votingOnName" class="font-sans text-xl">
@@ -120,7 +92,6 @@ import type Player from '@/interfaces/player'
 import { io } from 'socket.io-client'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import Tickets from '@/components/Tickets.vue'
 import { useTickets } from '@/composables/useTickets'
 import { useGameEngine } from '@/composables/useGameEngine'
 import Sharing from '@/components/SharingModal.vue'
@@ -128,7 +99,6 @@ import Input from '@/components/ui/input/Input.vue'
 
 let showInstallPwa = ref(false)
 const modal = ref(true)
-const showCopiedToClipboard = ref(false)
 const name = ref('')
 const showTickets = ref(false)
 const { votingOnName, tickets } = useTickets()
@@ -196,10 +166,6 @@ function playerHasVoted() {
   return players.value.filter((p: Player) => p.vote !== null && p.vote !== undefined).length > 0
 }
 
-function copyToClipboard() {
-  showShareModal.value = true
-}
-
 const average = computed(() => {
   let count = 0
   let total = 0
@@ -237,5 +203,4 @@ function joiningAGame() {
   )
 }
 
-const toggleTickets = () => (showTickets.value = !showTickets.value)
 </script>
