@@ -26,4 +26,4 @@ COPY --from=build-stage /app/dist /usr/share/nginx/html
 EXPOSE 80
 
 # Comando padrão para iniciar o Nginx
-CMD ["nginx", "-g"]
+CMD ["nginx", "-g", "daemon off;"]   
