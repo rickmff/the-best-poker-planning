@@ -9,7 +9,7 @@ services:
       - ORIGIN=${ORIGIN}
     labels:
         - traefik.enable=true
-        - "traefik.http.routers.server.rule=Host(`thepokerplannig.com`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.server.rule=Host(`thepokerplanning.com`) && PathPrefix(`/api`)"
         - "traefik.http.routers.client.entryPoints=http,https"
   client:
     container_name: client
@@ -19,5 +19,5 @@ services:
       - VITE_APP_API_URL=${VITE_APP_API_URL}
     labels:
         - traefik.enable=true
-        - "traefik.http.routers.client.rule=Host(`thepokerplannig.com`) && PathPrefix(`/`)"
+        - "traefik.http.routers.client.rule=Host(`thepokerplanning.com`) && PathPrefix(`/`)"
         - "traefik.http.routers.client.entryPoints=http,https"
