@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="font-mono">
     <title>The Best Poker Planning</title>
     <router-view/>
   </div>
@@ -11,7 +11,6 @@ html, body {
   margin: 0;
   box-sizing: border-box;
   background: #080808;
-  font-family: 'Mono', sans-serif;
   overflow: hidden;
 }
 </style>

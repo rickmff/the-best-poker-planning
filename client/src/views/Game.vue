@@ -1,36 +1,21 @@
 <template>
   <div class="py-20">
     <h1 class="sr-only">The poker planning</h1>
-    <Sharing
-      v-if="showShareModal"
-      title="share_modal_title"
-      subTitle="share_modal_subtitle"
-      @dismissModal="dismissModal"
-    ></Sharing>
-    <div v-if="!modal && !showShareModal" class="flex justify-center h-full w-full box-border">
-      <div class="absolute top-8 right-8 flex space-x-4">
-<!--         <div class="flex items-center space-x-2 bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
+    <div class="flex justify-center h-full w-full box-border">
+      <!-- <div class="absolute top-8 right-8 flex space-x-4">
+        <div class="flex items-center space-x-2 bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
           {{ name }}
-          <Input ></Input>
-        </div> -->
+          <Input></Input>
+        </div>
         <button
           v-if="!showCopiedToClipboard"
-          @click="copyToClipboard()"
+          @click="true"
           class="bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600"
         >
           Invite players
         </button>
-        <button
-          v-if="!modal && showCopiedToClipboard"
-          class="bg-green-500 text-white rounded-lg px-4 py-2 cursor-default"
-        >
-          {{ 'copy_to_clip' }}
-        </button>
-        <!--         <button @click="toggleTickets" class="bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
-          Toggle Tickets
-        </button> -->
       </div>
-
+ -->
       <div class="absolute top-8 left-8">
         <div v-if="votingOnName" class="font-sans text-xl">
           <p>
@@ -39,12 +24,12 @@
         </div>
       </div>
 
-      <button
+      <div
         v-if="!playerHasVoted() && !showVotes"
-        class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-200 rounded-full w-80 h-20 text-center cursor-default"
+        class="flex justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-200 rounded-lg w-80 h-20 text-center cursor-default"
       >
-        <span>Cast your votes</span>
-      </button>
+        <span class="text-xl font-bold">Vote</span>
+      </div>
       <button
         v-if="playerHasVoted() && !showVotes"
         @click="showVotesClicked()"
@@ -57,7 +42,7 @@
         @click="startNewGame()"
         class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white rounded-full w-80 h-20 text-center hover:bg-green-600"
       >
-        <span>{{ startGameMessage }}</span>
+        <span class="text-xl font-bold">{{ startGameMessage }}</span>
       </button>
       <button
         v-if="showVotes && countdown > 0"
@@ -92,7 +77,7 @@
           @click="performVote(vote)"
           :disabled="currentVote === vote || countdown > 0"
           :class="[
-            'w-16 h-16 rounded-full text-center',
+            'w-16 h-16 rounded-full text-center font-bold text-xl',
             currentVote === vote ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
           ]"
         >
@@ -101,16 +86,13 @@
       </div>
       <div
         v-if="showVotes && countdown === 0"
-        class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-secondary rounded-lg shadow-lg p-4"
+        class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-4"
       >
-        <div class="text-xl">
-          <div>Average: {{ getAverage() }}</div>
-          <div>Closest: {{ getClosest() }}</div>
+        <div class="flex flex-col justify-center items-center gap-2">
+          <span class="text-2xl font-bold">Closest: {{ getClosest() }}</span>
+          <span class="text-lg opacity-80">Average: {{ getAverage() }}</span>
         </div>
       </div>
-      <!--       <div v-show="showTickets" class="absolute right-8 top-20 bg-secondary rounded-lg shadow-lg p-4">
-        <Tickets></Tickets>
-      </div> -->
     </div>
   </div>
 </template>
@@ -120,29 +102,18 @@ import type Player from '@/interfaces/player'
 import { io } from 'socket.io-client'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import Tickets from '@/components/Tickets.vue'
 import { useTickets } from '@/composables/useTickets'
 import { useGameEngine } from '@/composables/useGameEngine'
-import Sharing from '@/components/SharingModal.vue'
-import Input from '@/components/ui/input/Input.vue'
 
 let showInstallPwa = ref(false)
 const modal = ref(true)
-const showCopiedToClipboard = ref(false)
 const name = ref('')
-const showTickets = ref(false)
 const { votingOnName, tickets } = useTickets()
 const { socket, setSocket, players, showVotes, countdown, currentVote } = useGameEngine()
-const showShareModal = ref(false)
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault()
   showInstallPwa.value = true
 })
-
-async function dismissModal() {
-  showShareModal.value = false
-}
 
 onMounted(() => {
   if (joiningAGame()) {
@@ -196,10 +167,6 @@ function playerHasVoted() {
   return players.value.filter((p: Player) => p.vote !== null && p.vote !== undefined).length > 0
 }
 
-function copyToClipboard() {
-  showShareModal.value = true
-}
-
 const average = computed(() => {
   let count = 0
   let total = 0
@@ -236,6 +203,4 @@ function joiningAGame() {
     currentState && Object.keys(currentState).length === 0 && currentState.constructor === Object
   )
 }
-
-const toggleTickets = () => (showTickets.value = !showTickets.value)
 </script>

@@ -1,9 +1,14 @@
 {
-    "name": "the-best-poker-planning",
-    "version": "1.0.0",
-    "scripts": {
-      "install": "cd server && npm install && cd ../client && npm install",
-      "build": "cd server && npm run build && cd ../client && npm run build",
-      "start": "cd server && npm start"
-    }
+  "name": "the-best-poker-planning",
+  "version": "1.0.0",
+  "scripts": {
+    "install": "cd server && npm install && cd ../client && npm install",
+    "build": "cd server && npm run build && cd ../client && npm run build",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm run dev",
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
+}
