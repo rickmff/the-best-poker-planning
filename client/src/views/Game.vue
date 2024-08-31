@@ -2,20 +2,6 @@
   <div class="py-20">
     <h1 class="sr-only">The poker planning</h1>
     <div class="flex justify-center h-full w-full box-border">
-      <!-- <div class="absolute top-8 right-8 flex space-x-4">
-        <div class="flex items-center space-x-2 bg-gray-200 rounded-lg px-4 py-2 hover:bg-gray-300">
-          {{ name }}
-          <Input></Input>
-        </div>
-        <button
-          v-if="!showCopiedToClipboard"
-          @click="true"
-          class="bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600"
-        >
-          Invite players
-        </button>
-      </div>
- -->
       <div class="absolute top-8 left-8">
         <div v-if="votingOnName" class="font-sans text-xl">
           <p>
