@@ -1,23 +1,23 @@
 # Use an official Node runtime as the base image
-FROM node:14
+FROM node:18
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Copy the entire project
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
 COPY . .
 
-# Install dependencies using the script in package.json
-RUN npm run install
-
-# Build both server and client
+# Build the application
 RUN npm run build
 
-# Expose the port the server runs on (adjust if your server uses a different port)
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Command to start both server and client
-CMD ["npm", "start"]
+# Start the application
+CMD [ "npm", "start" ]
