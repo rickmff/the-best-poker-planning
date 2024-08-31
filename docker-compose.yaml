@@ -16,9 +16,9 @@ services:
         build:
             context: ./client
         ports:
-            - "8080:80"
+            - "8081:80"
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.client.rule=Host(`coolify.io`)"
             - "traefik.http.routers.client.entrypoints=http"
-            - "traefik.http.services.client.loadbalancer.server.port=8080"
+            - "traefik.http.services.client.loadbalancer.server.port=8081"
