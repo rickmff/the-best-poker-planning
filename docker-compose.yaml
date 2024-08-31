@@ -9,8 +9,8 @@ services:
       - ORIGIN=${ORIGIN}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.server.rule=Host(`coolify.io`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.server.entrypoints=http"
+      - "traefik.http.routers.rule=Host(`coolify.io`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.entrypoints=http"
   client:
     container_name: client
     build:
@@ -19,5 +19,5 @@ services:
       - VITE_APP_API_URL=${VITE_APP_API_URL}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.client.rule=Host(`coolify.io`) && PathPrefix(`/`)"
-      - "traefik.http.routers.client.entrypoints=http"
+      - "traefik.http.routers.rule=Host(`coolify.io`) && PathPrefix(`/`)"
+      - "traefik.http.routers.entrypoints=http"
