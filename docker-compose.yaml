@@ -10,7 +10,7 @@ services:
     labels:
         - traefik.enable=true
         - "traefik.http.routers.server.rule=Host(`thepokerplannig.com`) && PathPrefix(`/api`)"
-        - traefik.http.routers.server.entryPoints=http
+        - "traefik.http.routers.client.entryPoints=http,https"
   client:
     container_name: client
     build:
@@ -20,4 +20,4 @@ services:
     labels:
         - traefik.enable=true
         - "traefik.http.routers.client.rule=Host(`thepokerplannig.com`) && PathPrefix(`/`)"
-        - traefik.http.routers.client.entryPoints=http
+        - "traefik.http.routers.client.entryPoints=http,https"
