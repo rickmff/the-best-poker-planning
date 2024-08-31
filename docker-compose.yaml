@@ -9,9 +9,6 @@ services:
       - "3000"
     environment:
       - ORIGIN=${ORIGIN}
-    volumes:
-      - ./server:/app
-      - /app/node_modules
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.server.rule=Host(`coolify.io`) && PathPrefix(`/server`)"
@@ -25,11 +22,7 @@ services:
     ports:
       - "80"
     environment:
-    
       - VITE_APP_API_URL=${VITE_APP_API_URL}
-    volumes:
-      - ./client:/app
-      - /app/node_modules
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.client.rule=Host(`coolify.io`)"
