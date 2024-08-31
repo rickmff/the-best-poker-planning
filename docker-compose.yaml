@@ -3,21 +3,23 @@ version: '3.8'
 services:
   server:
     container_name: server
+    ports: "7000:3000"
     build:
       context: ./server
     environment:
       - ORIGIN=${ORIGIN}
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.rule=Host(`coolify.io`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.entrypoints=http"
+        - traefik.enable=true
+        - "traefik.http.routers.<unique_router_name>.rule=Host(`coolify.io`) && PathPrefix(`/`)"
+        - traefik.http.routers.<unique_router_name>.entryPoints=http
   client:
     container_name: client
+    ports: "5000:80"
     build:
       context: ./client
     environment:
       - VITE_APP_API_URL=${VITE_APP_API_URL}
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.rule=Host(`coolify.io`) && PathPrefix(`/`)"
-      - "traefik.http.routers.entrypoints=http"
+        - traefik.enable=true
+        - "traefik.http.routers.<unique_router_name>.rule=Host(`coolify.io`) && PathPrefix(`/`)"
+        - traefik.http.routers.<unique_router_name>.entryPoints=http
