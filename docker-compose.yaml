@@ -5,8 +5,6 @@ services:
     container_name: server
     build:
       context: ./server
-    ports:
-      - "3000"
     environment:
       - ORIGIN=${ORIGIN}
     labels:
@@ -17,8 +15,6 @@ services:
     container_name: client
     build:
       context: ./client
-    ports:
-      - "80"
     environment:
       - VITE_APP_API_URL=${VITE_APP_API_URL}
     labels:
