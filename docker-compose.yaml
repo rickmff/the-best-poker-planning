@@ -3,9 +3,8 @@ version: '3.8'
 services:
   server:
     container_name: server
-    app:
-      env_file:
-        - .env
+    env_file:
+      - .env
     build:
       context: ./server
     environment:
@@ -19,9 +18,8 @@ services:
         - "traefik.http.routers.server.middlewares=svc-websocket@docker"
   client:
     container_name: client
-    app:
-      env_file:
-        - .env
+    env_file:
+      - .env
     build:
       context: ./client
       args:
