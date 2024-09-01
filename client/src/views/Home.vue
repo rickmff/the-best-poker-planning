@@ -36,7 +36,7 @@ function startGame() {
         }
     }, 5000)
     const newSocket = io(import.meta.env.VITE_API_URL, {
-        path: '/api/socket.io/',
+        path: '/api/v3/socket.io/',
         transports: ['websocket']
     })
     setSocket(newSocket)

@@ -88,7 +88,7 @@ onMounted(() => {
             query: {
                 roomId: route.params.id as string
             },
-            path: '/api/socket.io/',
+            path: '/api/v3/socket.io/',
             transports: ['websocket']
         })
         setSocket(newSocket)
