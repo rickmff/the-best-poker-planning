@@ -6,8 +6,6 @@
             <span class="absolute bottom-5 -left-20 text-3xl text-white/50">The</span> Poker planning
         </h1>
 
-        <p>VITE_API_URL: {{ API_URL }}</p>
-
         <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
             @click="startGame()">
             <span v-if="!clickedStart" class="text-3xl text-white/80">Create room</span>
