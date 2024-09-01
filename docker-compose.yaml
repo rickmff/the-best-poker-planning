@@ -18,8 +18,10 @@ services:
     container_name: client
     build:
       context: ./client
+      args:
+        vite_api_url: ${vite_api_url}
     environment:
-      - VITE_API_URL=${VITE_API_URL}
+      - VITE_API_URL=${vite_api_url}
     labels:
         - traefik.enable=true
         - "traefik.http.routers.client.rule=Host(`thepokerplanning.com`) && PathPrefix(`/`)"

@@ -15,7 +15,7 @@ RUN npm install
 # Copiar o restante do código da aplicação
 COPY . .
 
-ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_API_URL=${vite_api_url}
 
 # Construir a aplicação
 RUN npm run build
