@@ -6,7 +6,7 @@
             <span class="absolute bottom-5 -left-20 text-3xl text-white/50">The</span> Poker planning
         </h1>
 
-        <p>{{API_URL}}</p>
+        <p>VITE_API_URL: {{API_URL}}</p>
 
         <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
             @click="startGame()">
@@ -32,7 +32,7 @@ function startGame() {
     clickedStart.value = true
     setTimeout(() => {
         if (!hasStarted.value) {
-            alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_APP_API_URL)
+            alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_API_URL)
         }
     }, 5000)
     const newSocket = io('https://thepokerplanning.com/socket.io')
@@ -147,7 +147,7 @@ const onResize = (): void => {
 const API_URL = ref('')
 
 onMounted(() => {
-    API_URL.value = import.meta.env.VITE_APP_API_URL
+    API_URL.value = import.meta.env.VITE_API_URL
     if (canvasRef.value) {
         ctx = canvasRef.value.getContext('2d')
         if (ctx) {
