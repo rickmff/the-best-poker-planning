@@ -25,7 +25,7 @@ services:
     build:
       context: ./client
       args:
-        - vite_api_url: ${vite_api_url}
+        - VITE_API_URL=${vite_api_url}
     environment:
         - VITE_API_URL=${vite_api_url}
     labels:
