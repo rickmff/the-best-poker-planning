@@ -10,10 +10,9 @@ const app = express();
 const http = createServer(app);
 const io = new Server(http, {
     cors: {
-        origin: process.env.ORIGIN,
+        origin: "*",
         methods: ["GET", "POST"]
-    },
-    path: '/socket.io'
+    }
 });
 
 interface Player {
@@ -46,18 +45,6 @@ app.get('/', (req, res) => {
 console.log(process.env.ORIGIN);
 http.listen(process.env.PORT || 3000, () => {
     console.log('listening on *:3000');
-});
-
-// Add this before your other routes
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', process.env.ORIGIN || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
 });
 
 io.on('connection', (socket: Socket) => {
