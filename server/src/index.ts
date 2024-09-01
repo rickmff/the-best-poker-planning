@@ -6,15 +6,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-
 const app = express();
 const http = createServer(app);
 const io = new Server(http, {
     cors: {
         origin: process.env.ORIGIN,
         methods: ["GET", "POST"]
-    }
+    },
+    path: '/socket.io'
 });
 
 interface Player {
@@ -40,20 +39,19 @@ setInterval(() => {
     logRooms();
 }, 8000);
 
-// Update the listening port to use the port from BASE_URL
-const port = new URL(BASE_URL).port || 3000;
-
-http.listen(port, () => {
-    console.log(`Server running at ${BASE_URL}`);
-});
-
 app.get('/', (req, res) => {
-    res.send(`<h1>Hello world</h1><p>Base URL: ${BASE_URL}</p>`);
+    res.send('<h1>Hello world</h1>');
 });
 
 console.log(process.env.ORIGIN);
-http.listen(process.env.PORT || 3000, () => {
-    console.log('listening on *:3000');
+const port = process.env.PORT || 3000;
+
+http.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+    console.log(`CORS origin: ${process.env.ORIGIN}`);
+    console.log(`Socket.IO path: /socket.io`);
+}).on('error', (err) => {
+    console.error('Failed to start server:', err);
 });
 
 io.on('connection', (socket: Socket) => {

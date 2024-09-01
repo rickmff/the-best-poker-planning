@@ -7,18 +7,20 @@ services:
       context: ./server
     environment:
       - ORIGIN=${ORIGIN}
-      - BASE_URL=https://thepokerplanning.com/api
     labels:
-        - traefik.enable=true
-        - "traefik.http.routers.server.rule=Host(`thepokerplanning.com`) && PathPrefix(`/api`)"
-        - "traefik.http.routers.client.entryPoints=http,https"
+      - traefik.enable=true
+      - "traefik.http.routers.server.rule=Host(`thepokerplanning.com`) && PathPrefix(`/api`)"
+      - "traefik.http.services.server.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.server-stripprefix.stripprefix.prefixes=/api"
+      - "traefik.http.routers.server.middlewares=server-stripprefix"
+
   client:
     container_name: client
     build:
       context: ./client
     environment:
-      - VITE_APP_API_URL=${VITE_APP_API_URL}
+      - VITE_APP_API_URL=https://thepokerplanning.com
     labels:
-        - traefik.enable=true
-        - "traefik.http.routers.client.rule=Host(`thepokerplanning.com`) && PathPrefix(`/`)"
-        - "traefik.http.routers.client.entryPoints=http,https"
+      - traefik.enable=true
+      - "traefik.http.routers.client.rule=Host(`thepokerplanning.com`)"
+      - "traefik.http.services.client.loadbalancer.server.port=80"
