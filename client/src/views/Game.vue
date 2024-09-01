@@ -104,12 +104,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
 onMounted(() => {
   if (joiningAGame()) {
     const route = useRoute()
-    const apiUrl = import.meta.env.VITE_APP_API_URL || 'https://thepokerplanning.com'
+    const apiUrl = import.meta.env.VITE_APP_API_URL || 'https://thepokerplanning.com/socket.io'
     const newSocket = io(apiUrl, {
       query: {
         roomId: route.params.id
       },
-      path: '/api/socket.io'
+      path: '/socket.io'
     })
     setSocket(newSocket)
   }
