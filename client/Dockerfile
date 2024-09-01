@@ -1,6 +1,8 @@
 # Etapa 1: Construção da aplicação com Node.js
 FROM node:18 AS build-stage
 
+ARG vite_api_url
+
 # Definir o diretório de trabalho no contêiner
 WORKDIR /app
 
@@ -12,6 +14,8 @@ RUN npm install
 
 # Copiar o restante do código da aplicação
 COPY . .
+
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Construir a aplicação
 RUN npm run build
