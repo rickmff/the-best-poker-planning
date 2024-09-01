@@ -44,14 +44,8 @@ app.get('/', (req, res) => {
 });
 
 console.log(process.env.ORIGIN);
-const port = process.env.PORT || 3000;
-
-http.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    console.log(`CORS origin: ${process.env.ORIGIN}`);
-    console.log(`Socket.IO path: /socket.io`);
-}).on('error', (err) => {
-    console.error('Failed to start server:', err);
+http.listen(process.env.PORT || 3000, () => {
+    console.log('listening on *:3000');
 });
 
 io.on('connection', (socket: Socket) => {
