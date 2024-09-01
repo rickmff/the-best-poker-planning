@@ -10,8 +10,9 @@ import autoprefixer from 'autoprefixer'
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
-    // Update this line to output to a 'dist' folder within the client directory
-    outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+        minify: false,  // Desativa a minificação
+        sourcemap: true, // Gera os source maps para facilitar o debug
+        outDir: fileURLToPath(new URL('./dist', import.meta.url)),
   },
   server: {
     port: 8080,
