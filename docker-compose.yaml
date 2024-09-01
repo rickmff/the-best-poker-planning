@@ -13,9 +13,6 @@ services:
         - traefik.enable=true
         - "traefik.http.routers.server.rule=Host(`thepokerplanning.com`) && PathPrefix(`/socket.io/`)"
         - "traefik.http.routers.client.entryPoints=http,https"
-        - "traefik.http.middlewares.svc-websocket.headers.customrequestheaders.Connection=Upgrade"
-        - "traefik.http.middlewares.svc-websocket.headers.customrequestheaders.Upgrade=websocket"
-        - "traefik.http.routers.server.middlewares=svc-websocket@docker"
   client:
     container_name: client
     env_file:
