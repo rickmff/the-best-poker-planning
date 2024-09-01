@@ -41,10 +41,10 @@ function startGame() {
   console.log('VITE_APP_API_URL', import.meta.env.VITE_APP_API_URL)
   setTimeout(() => {
     if (!hasStarted.value) {
-      alert(`Looks like there's a problem connecting you to the server ${import.meta.env.VITE_APP_API_URL} 🥲`)
+      alert(`Looks like there's a problem connecting you to the server https://thepokerplanning.com/api 🥲`)
     }
   }, 5000)
-  const newSocket = io(import.meta.env.VITE_APP_API_URL)
+  const newSocket = io('https://thepokerplanning.com/api')
   setSocket(newSocket)
   socket.value.on('room', (roomId: string) => {
     hasStarted.value = true
