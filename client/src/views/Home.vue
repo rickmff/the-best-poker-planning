@@ -40,7 +40,7 @@ function startGame() {
   clickedStart.value = true
   setTimeout(() => {
     if (!hasStarted.value) {
-      alert("Looks like there's a problem connecting you to the server 😕")
+      alert(`Looks like there's a problem connecting you to the server ${import.meta.env.BASE_URL} 🥲`)
     }
   }, 5000)
   const newSocket = io('https://thepokerplanning.com/api')
