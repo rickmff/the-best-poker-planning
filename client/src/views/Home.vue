@@ -6,7 +6,7 @@
             <span class="absolute bottom-5 -left-20 text-3xl text-white/50">The</span> Poker planning
         </h1>
 
-        <p>VITE_API_URL: {{API_URL}}</p>
+        <p>VITE_API_URL: {{ API_URL }}</p>
 
         <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
             @click="startGame()">
@@ -35,7 +35,10 @@ function startGame() {
             alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_API_URL)
         }
     }, 5000)
-    const newSocket = io(import.meta.env.VITE_API_URL)
+    const newSocket = io(import.meta.env.VITE_API_URL, {
+        path: '/api',
+        transports: ['websocket']
+    })
     setSocket(newSocket)
     socket.value.on('room', (roomId: string) => {
         hasStarted.value = true

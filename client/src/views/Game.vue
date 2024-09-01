@@ -86,8 +86,10 @@ onMounted(() => {
         const route = useRoute()
         const newSocket = io(import.meta.env.VITE_API_URL, {
             query: {
-                roomId: route.params.id
-            }
+                roomId: route.params.id as string
+            },
+            path: '/api',
+            transports: ['websocket']
         })
         setSocket(newSocket)
     }
