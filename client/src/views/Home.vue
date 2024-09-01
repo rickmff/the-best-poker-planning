@@ -35,7 +35,7 @@ function startGame() {
             alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_APP_API_URL)
         }
     }, 5000)
-    const newSocket = io(import.meta.env.VITE_APP_API_URL)
+    const newSocket = io('https://thepokerplanning.com/socket.io')
     setSocket(newSocket)
     socket.value.on('room', (roomId: string) => {
         hasStarted.value = true
