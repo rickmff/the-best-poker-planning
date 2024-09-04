@@ -15,6 +15,15 @@ const router = createRouter({
       }
     },
     {
+      path: '/user-settings',
+      name: 'UserSettings',
+      component: () => import('@/views/UserSettings.vue'),
+      meta: {
+        auth: false,
+        title: 'User Settings'
+      }
+    },
+    {
       path: '/game/:id',
       name: 'Game',
       component: Game,

@@ -22,7 +22,7 @@ export default {
         cursive: ["cursive", "sans-serif"],
       },
       colors: {
-        primary: "#000000",
+        primary: "#0D0D0D",
         secondary: "#1e1e1e",
         border: "#23252A",
         accent2: "#00ff99",
