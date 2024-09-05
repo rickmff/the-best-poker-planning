@@ -60,6 +60,7 @@
                 </div>
             </div>
         </div>
+        <UserSettings v-if="showUserSettings" @save="saveUserInfo" />
     </div>
 </template>
 
@@ -70,35 +71,41 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTickets } from '@/composables/useTickets'
 import { useGameEngine } from '@/composables/useGameEngine'
+import UserSettings from '@/components/UserSettings.vue'
 
 let showInstallPwa = ref(false)
-const modal = ref(true)
-const name = ref('')
 const { votingOnName, tickets } = useTickets()
 const { socket, setSocket, players, showVotes, countdown, currentVote } = useGameEngine()
+const showUserSettings = ref(true)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     showInstallPwa.value = true
 })
 
-onMounted(() => {
-    if (joiningAGame()) {
-        const route = useRoute()
+onMounted(async () => {
+    const route = useRoute();
+    const roomId = route.params.id as string;
+    
+    if (roomId) {
         const newSocket = io(import.meta.env.VITE_API_URL, {
             query: {
-                roomId: route.params.id as string
+                roomId: roomId
             },
             path: '/api/socket.io/',
             transports: ['websocket']
-        })
-        setSocket(newSocket)
-    }
+        });
+        setSocket(newSocket);
 
-    const storedName = localStorage.getItem('name')
-    if (storedName) {
-        enteredName(storedName)
+        const storedName = localStorage.getItem('name');
+        const storedColor = localStorage.getItem('color');
+        
+        if (storedName && storedColor) {
+            await saveUserInfo(storedName, storedColor);
+        } else {
+            showUserSettings.value = true;
+        }
     }
-})
+});
 
 const startGameMessage = computed(() => {
     if (!tickets.value || tickets.value.every((t: any) => t.score)) {
@@ -118,17 +125,6 @@ function performVote(vote: string) {
 
 function startNewGame() {
     socket.value.emit('restart')
-}
-
-function emitName(name: string) {
-    socket.value.emit('name', name)
-}
-
-function enteredName(updatedName: string) {
-    name.value = updatedName
-    emitName(updatedName)
-    localStorage.setItem('name', updatedName)
-    modal.value = false
 }
 
 function playerHasVoted() {
@@ -165,10 +161,15 @@ function getClosest() {
     return closest
 }
 
-function joiningAGame() {
-    const currentState = socket.value
-    return (
-        currentState && Object.keys(currentState).length === 0 && currentState.constructor === Object
-    )
+async function saveUserInfo(name: string, color: string): Promise<void> {
+    return new Promise((resolve) => {
+        socket.value.emit('setUserInfo', { name, color }, () => {
+            showUserSettings.value = false;
+            localStorage.setItem('name', name);
+            localStorage.setItem('color', color);
+            resolve();
+        });
+    });
 }
+
 </script>

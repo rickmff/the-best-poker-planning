@@ -10,7 +10,7 @@ const app = express();
 const http = createServer(app);
 const io = new Server(http, {
     cors: {
-        origin: process.env.ORIGIN,
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -18,6 +18,7 @@ const io = new Server(http, {
 interface Player {
     id: string;
     name: string;
+    color: string;
     roomId: string;
     vote?: string;
 }
@@ -28,6 +29,15 @@ interface Ticket {
     votingOn: boolean;
     score?: number;
 }
+
+interface Room {
+    id: string;
+    players: Player[];
+    tickets: Ticket[];
+    lastActivity: number;
+}
+
+const rooms: Map<string, Room> = new Map();
 
 let players: Player[] = [];
 let tickets: Ticket[] = [];
@@ -56,7 +66,29 @@ io.on('connection', (socket: Socket) => {
     }
     socket.join(roomId);
 
-    players.push({id: socket.id, name: '', roomId: roomId});
+    if (!rooms.has(roomId)) {
+        rooms.set(roomId, {
+            id: roomId,
+            players: [],
+            tickets: [],
+            lastActivity: Date.now(),
+        });
+    }
+
+    const room = rooms.get(roomId)!;
+    const newPlayer: Player = { id: socket.id, name: '', color: '#ffffff', roomId: roomId };
+    room.players.push(newPlayer);
+
+    socket.on('setUserInfo', ({ name, color }: { name: string, color: string }, callback: () => void) => {
+        const player = room.players.find(p => p.id === socket.id);
+        if (player) {
+            console.log(`Setting user info: name=${name}, color=${color}`);
+            player.name = name;
+            player.color = color;
+        }
+        room.lastActivity = Date.now();
+        updateClientsInRoom(roomId);
+    });
 
     socket.on('name', (name: string) => {
         let player = players.find(p => p.id == socket.id);
@@ -104,9 +136,16 @@ io.on('connection', (socket: Socket) => {
     });
 
     socket.on('disconnect', () => {
-        const player = players.find(player => player.id === socket.id);
-        console.log(`Player ${player?.name} has disconnected`);
-        players = players.filter(player => player.id !== socket.id);
+        const playerIndex = room.players.findIndex(player => player.id === socket.id);
+        if (playerIndex !== -1) {
+            const player = room.players[playerIndex];
+            console.log(`Player ${player.name} has disconnected`);
+            room.players.splice(playerIndex, 1);
+        }
+        if (room.players.length === 0) {
+            rooms.delete(roomId);
+            console.log(`Room ${roomId} has been closed`);
+        }
         updateClientsInRoom(roomId);
     });
 
@@ -117,12 +156,13 @@ io.on('connection', (socket: Socket) => {
 });
 
 function updateClientsInRoom(roomId: string): void {
-    const roomPlayers = players.filter(p => p.roomId == roomId);
-    const roomTickets = tickets.filter(p => p.roomId == roomId);
-    io.to(roomId).emit('update', {
-        players: roomPlayers,
-        tickets: roomTickets
-    });
+    const room = rooms.get(roomId);
+    if (room) {
+        io.to(roomId).emit('update', {
+            players: room.players,
+            tickets: room.tickets,
+        });
+    }
 }
 
 function restartGame(roomId: string): void {
@@ -147,13 +187,11 @@ function restartGame(roomId: string): void {
 }
 
 function logRooms(): void {
-    const rooms = players.map(e => e.roomId);
-    if (rooms) {
-        for (const room of rooms.filter((val, i, arr) => arr.indexOf(val) == i)) {
-            const playersInRoom = players.filter(p => p.roomId == room).map(p => p.name);
-            console.log(`Room: ${room} - Players: ${playersInRoom.join(", ")}`);
-        }
-    }
+    console.log('Current active rooms:');
+    rooms.forEach((room, roomId) => {
+        const playerNames = room.players.map(p => p.name).join(', ');
+        console.log(`Room: ${roomId} - Players: ${playerNames} - Last activity: ${new Date(room.lastActivity).toISOString()}`);
+    });
 }
 
 function showVotes(roomId: string): void {
@@ -193,3 +231,13 @@ function getAverage(roomId: string): number {
     }
     return total / count;
 }
+
+// Add this new endpoint
+app.get('/api/rooms/activated', (req, res) => {
+    const activeRooms = Array.from(rooms.values()).map(room => ({
+        id: room.id,
+        playerCount: room.players.length,
+        lastActivity: room.lastActivity,
+    }));
+    res.json(activeRooms);
+});

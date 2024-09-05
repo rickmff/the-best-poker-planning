@@ -16,14 +16,32 @@
 
 <script setup lang="ts">
 import router from '@/router'
+import { io } from 'socket.io-client'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useGameEngine } from '@/composables/useGameEngine'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-vue-next'
 
+const { socket, setSocket } = useGameEngine()
 const clickedStart = ref(false)
+const hasStarted = ref(false)
+
 function startGame() {
     clickedStart.value = true
-    router.push({ path: '/user-settings' })
+    setTimeout(() => {
+        if (!hasStarted.value) {
+            alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_API_URL)
+        }
+    }, 5000)
+    const newSocket = io(import.meta.env.VITE_API_URL, {
+        path: '/api/socket.io/',
+        transports: ['websocket']
+    })
+    setSocket(newSocket)
+    socket.value.on('room', (roomId: string) => {
+        hasStarted.value = true
+        router.push({ path: `/game/${roomId}` })
+    })
 }
 class Particle {
     private x: number = 0
