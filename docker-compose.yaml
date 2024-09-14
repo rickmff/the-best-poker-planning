@@ -11,7 +11,7 @@ services:
       - ORIGIN=${ORIGIN}
     labels:
         - traefik.enable=true
-        - "traefik.http.routers.server.rule=Host(`thepokerplanning.com`) && PathPrefix(`/socket.io/`)"
+        - "traefik.http.routers.server.rule=Host(`thescrumplanning.site`) && PathPrefix(`/api/`)"
         - "traefik.http.routers.client.entryPoints=http,https"
         - "traefik.http.middlewares.svc-websocket.headers.customrequestheaders.Connection=Upgrade"
         - "traefik.http.middlewares.svc-websocket.headers.customrequestheaders.Upgrade=websocket"
@@ -26,5 +26,5 @@ services:
         - VITE_API_URL=${VITE_API_URL}
     labels:
         - traefik.enable=true
-        - "traefik.http.routers.client.rule=Host(`thepokerplanning.com`) && PathPrefix(`/`)"
+        - "traefik.http.routers.client.rule=Host(`thescrumplanning.site`) && PathPrefix(`/`)"
         - "traefik.http.routers.client.entryPoints=http,https"
