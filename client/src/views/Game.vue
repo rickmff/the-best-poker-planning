@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8 text-white">
     <h1 class="text-3xl font-bold mb-6">Room: {{ room.id }}</h1>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -17,7 +17,7 @@
 
       <div>
         <h2 class="text-2xl font-semibold mb-4">Voting</h2>
-        <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-3 gap-4 mb-6 text-black">
           <Button v-for="option in voteOptions" :key="option" @click="vote(option)"
             :variant="currentVote === option ? 'default' : 'outline'"
             :disabled="showVotes">
