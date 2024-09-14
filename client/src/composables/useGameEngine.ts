@@ -1,151 +1,173 @@
-import { ref, reactive } from "vue";
-import { io, Socket } from "socket.io-client";
-import type Game from '@/interfaces/game';
-import type Player from '@/interfaces/player';
+import { ref, reactive } from 'vue'
+import { io, Socket } from 'socket.io-client'
+import type Game from '@/interfaces/game'
+import type Player from '@/interfaces/player'
 
 export function useGameEngine() {
-	const socket = ref<Socket | null>(null);
-	const room = reactive<Game>({ id: "", players: [], tickets: [] });
-	const showVotes = ref(false);
-	const currentVote = ref<string | null>(null);
-	const error = ref<string | null>(null);
+  const socket = ref<Socket | null>(null)
+  const room = reactive<Game>({ id: '', players: [], tickets: [] })
+  const showVotes = ref(false)
+  const currentVote = ref<string | null>(null)
+  const error = ref<string | null>(null)
 
-	const connect = (url: string) => {
-		socket.value = io(url);
-		setupSocketHandlers();
-	};
+  const connect = (url: string) => {
+    socket.value = io(url, { path: '/api' })
+    setupSocketHandlers()
+  }
 
-	const setupSocketHandlers = () => {
-		if (!socket.value) return;
+  const setupSocketHandlers = () => {
+    if (!socket.value) return
 
-		socket.value.on("playerJoined", ({ player }: { player: Player }) => {
-			room.players.push(player);
-		});
+    socket.value.on('playerJoined', ({ player }: { player: Player }) => {
+      room.players.push(player)
+    })
 
-		socket.value.on("playerLeft", ({ playerId }: { playerId: string }) => {
-			const index = room.players.findIndex((p) => p.id === playerId);
-			if (index !== -1) {
-				room.players.splice(index, 1);
-			}
-		});
+    socket.value.on('playerLeft', ({ playerId }: { playerId: string }) => {
+      const index = room.players.findIndex((p) => p.id === playerId)
+      if (index !== -1) {
+        room.players.splice(index, 1)
+      }
+    })
 
-		socket.value.on("playerVoted", ({ playerId }: { playerId: string }) => {
-			const player = room.players.find((p) => p.id === playerId);
-			if (player) {
-				player.vote = "hidden";
-			}
-		});
+    socket.value.on('playerVoted', ({ playerId }: { playerId: string }) => {
+      const player = room.players.find((p) => p.id === playerId)
+      if (player) {
+        player.vote = 'hidden'
+      }
+    })
 
-		socket.value.on("votesRevealed", ({ players }: { players: Player[] }) => {
-			room.players = players;
-			showVotes.value = true;
-		});
+    socket.value.on('votesRevealed', ({ players }: { players: Player[] }) => {
+      room.players = players
+      showVotes.value = true
+    })
 
-		socket.value.on("votesReset", () => {
-			room.players.forEach((player) => {
-				player.vote = null;
-			});
-			showVotes.value = false;
-			currentVote.value = null;
-		});
-	};
+    socket.value.on('votesReset', () => {
+      room.players.forEach((player) => {
+        player.vote = null
+      })
+      showVotes.value = false
+      currentVote.value = null
+    })
+  }
 
-	const createRoom = async (roomId: string): Promise<boolean> => {
-		if (!socket.value) return false;
+  const createRoom = async (roomId: string): Promise<boolean> => {
+    if (!socket.value) return false
 
-		return new Promise((resolve) => {
-			socket.value?.emit("createRoom", { id: roomId }, (response: { success: boolean; error?: string }) => {
-				if (response.success) {
-					room.id = roomId;
-					resolve(true);
-				} else {
-					error.value = response.error || "Failed to create room";
-					resolve(false);
-				}
-			});
-		});
-	};
+    return new Promise((resolve) => {
+      socket.value?.emit(
+        'createRoom',
+        { id: roomId },
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            room.id = roomId
+            resolve(true)
+          } else {
+            error.value = response.error || 'Failed to create room'
+            resolve(false)
+          }
+        }
+      )
+    })
+  }
 
-	const joinRoom = async (roomId: string, playerName: string): Promise<boolean> => {
-		if (!socket.value) return false;
+  const joinRoom = async (roomId: string, playerName: string): Promise<boolean> => {
+    if (!socket.value) return false
 
-		return new Promise((resolve) => {
-			socket.value?.emit("joinRoom", { id: roomId, name: playerName }, (response: { success: boolean; error?: string; player?: Player }) => {
-				if (response.success) {
-					room.id = roomId;
-					if (response.player) {
-						const existingPlayerIndex = room.players.findIndex(p => p.id === response.player?.id);
-						if (existingPlayerIndex !== -1) {
-							room.players[existingPlayerIndex] = response.player;
-						} else {
-							room.players.push(response.player);
-						}
-					}
-					resolve(true);
-				} else {
-					error.value = response.error || "Failed to join room";
-					resolve(false);
-				}
-			});
-		});
-	};
+    return new Promise((resolve) => {
+      socket.value?.emit(
+        'joinRoom',
+        { id: roomId, name: playerName },
+        (response: { success: boolean; error?: string; player?: Player }) => {
+          if (response.success) {
+            room.id = roomId
+            if (response.player) {
+              const existingPlayerIndex = room.players.findIndex(
+                (p) => p.id === response.player?.id
+              )
+              if (existingPlayerIndex !== -1) {
+                room.players[existingPlayerIndex] = response.player
+              } else {
+                room.players.push(response.player)
+              }
+            }
+            resolve(true)
+          } else {
+            error.value = response.error || 'Failed to join room'
+            resolve(false)
+          }
+        }
+      )
+    })
+  }
 
-	const vote = async (voteValue: string): Promise<boolean> => {
-		if (!socket.value) return false;
+  const vote = async (voteValue: string): Promise<boolean> => {
+    if (!socket.value) return false
 
-		return new Promise((resolve) => {
-			socket.value?.emit("vote", { vote: voteValue }, (response: { success: boolean; error?: string }) => {
-				if (response.success) {
-					currentVote.value = voteValue;
-					resolve(true);
-				} else {
-					error.value = response.error || "Failed to submit vote";
-					resolve(false);
-				}
-			});
-		});
-	};
+    return new Promise((resolve) => {
+      socket.value?.emit(
+        'vote',
+        { vote: voteValue },
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            currentVote.value = voteValue
+            resolve(true)
+          } else {
+            error.value = response.error || 'Failed to submit vote'
+            resolve(false)
+          }
+        }
+      )
+    })
+  }
 
-	const revealVotes = async (): Promise<boolean> => {
-		if (!socket.value) return false;
+  const revealVotes = async (): Promise<boolean> => {
+    if (!socket.value) return false
 
-		return new Promise((resolve) => {
-			socket.value?.emit("revealVotes", { id: room.id }, (response: { success: boolean; error?: string }) => {
-				if (response.success) {
-					resolve(true);
-				} else {
-					error.value = response.error || "Failed to reveal votes";
-					resolve(false);
-				}
-			});
-		});
-	};
+    return new Promise((resolve) => {
+      socket.value?.emit(
+        'revealVotes',
+        { id: room.id },
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            resolve(true)
+          } else {
+            error.value = response.error || 'Failed to reveal votes'
+            resolve(false)
+          }
+        }
+      )
+    })
+  }
 
-	const resetVotes = async (): Promise<boolean> => {
-		if (!socket.value) return false;
+  const resetVotes = async (): Promise<boolean> => {
+    if (!socket.value) return false
 
-		return new Promise((resolve) => {
-			socket.value?.emit("resetVotes", { id: room.id }, (response: { success: boolean; error?: string }) => {
-				if (response.success) {
-					resolve(true);
-				} else {
-					error.value = response.error || "Failed to reset votes";
-					resolve(false);
-				}
-			});
-		});
-	};
+    return new Promise((resolve) => {
+      socket.value?.emit(
+        'resetVotes',
+        { id: room.id },
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            resolve(true)
+          } else {
+            error.value = response.error || 'Failed to reset votes'
+            resolve(false)
+          }
+        }
+      )
+    })
+  }
 
-	return {
-		connect,
-		createRoom,
-		joinRoom,
-		vote,
-		revealVotes,
-		resetVotes,
-		room,
-		showVotes,
-		currentVote,
-		error,
-	};
+  return {
+    connect,
+    createRoom,
+    joinRoom,
+    vote,
+    revealVotes,
+    resetVotes,
+    room,
+    showVotes,
+    currentVote,
+    error
+  }
 }
