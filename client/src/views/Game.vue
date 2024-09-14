@@ -1,175 +1,95 @@
 <template>
-    <div class="py-20">
-        <h1 class="sr-only">The poker planning</h1>
-        <div class="flex justify-center h-full w-full box-border">
-            <div class="absolute top-8 left-8">
-                <div v-if="votingOnName" class="font-sans text-xl">
-                    <p>
-                        Voting on: <b>{{ votingOnName }}</b>
-                    </p>
-                </div>
-            </div>
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Room: {{ room.id }}</h1>
 
-            <div v-if="!playerHasVoted() && !showVotes"
-                class="flex justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-200 rounded-lg w-80 h-20 text-center cursor-default">
-                <span class="text-xl font-bold">Vote</span>
-            </div>
-            <button v-if="playerHasVoted() && !showVotes" @click="showVotesClicked()"
-                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white rounded-full w-80 h-20 text-center hover:bg-blue-600">
-                <span>Show votes!</span>
-            </button>
-            <button v-if="showVotes && countdown === 0" @click="startNewGame()"
-                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white rounded-full w-80 h-20 text-center hover:bg-green-600">
-                <span class="text-xl font-bold">{{ startGameMessage }}</span>
-            </button>
-            <button v-if="showVotes && countdown > 0"
-                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-200 rounded-full w-80 h-20 text-center cursor-default">
-                <span>{{ countdown }}</span>
-            </button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <h2 class="text-2xl font-semibold mb-4">Players</h2>
+        <ul class="space-y-2">
+          <li v-for="player in room.players" :key="player.id" class="flex items-center justify-between">
+            <span>{{ player.name }}</span>
+            <span v-if="showVotes">{{ player.vote || 'No vote' }}</span>
+            <span v-else-if="player.vote">Voted</span>
+            <span v-else>Not voted</span>
+          </li>
+        </ul>
+      </div>
 
-            <div class="flex flex-wrap justify-center items-center mt-20 space-x-8">
-                <div v-for="player in players" :key="player.id" class="flex flex-col items-center">
-                    <div :class="[
-                        'w-16 h-20 rounded-2xl flex justify-center items-center',
-                        player.vote ? 'bg-teal-400' : 'bg-gray-200'
-                    ]">
-                        <span v-if="showVotes && countdown === 0">{{ player.vote }}</span>
-                    </div>
-                    <div class="mt-4 text-center text-2xl text-white capitalize">
-                        <span>{{ player.name }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="!showVotes || (showVotes && countdown !== 0)"
-                class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-wrap justify-center gap-4 max-w-3xl">
-                <button v-for="vote in ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '?']"
-                    :key="`vote-${vote}`" @click="performVote(vote)" :disabled="currentVote === vote || countdown > 0"
-                    :class="[
-                        'w-16 h-16 rounded-full text-center font-bold text-xl',
-                        currentVote === vote ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                    ]">
-                    <span>{{ vote }}</span>
-                </button>
-            </div>
-            <div v-if="showVotes && countdown === 0"
-                class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-4">
-                <div class="flex flex-col justify-center items-center gap-2">
-                    <span class="text-2xl font-bold">Closest: {{ getClosest() }}</span>
-                    <span class="text-lg opacity-80">Average: {{ getAverage() }}</span>
-                </div>
-            </div>
+      <div>
+        <h2 class="text-2xl font-semibold mb-4">Voting</h2>
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <Button v-for="option in voteOptions" :key="option" @click="vote(option)"
+            :variant="currentVote === option ? 'default' : 'outline'"
+            :disabled="showVotes">
+            {{ option }}
+          </Button>
         </div>
-        <UserSettings v-if="showUserSettings" @save="saveUserInfo" />
+        <div class="space-x-4">
+          <Button @click="revealVotes" :disabled="showVotes">Reveal Votes</Button>
+          <Button @click="resetVotes" :disabled="!showVotes">Reset Votes</Button>
+        </div>
+      </div>
     </div>
+
+    <div v-if="newPlayerJoined" class="mt-4 p-4 bg-green-100 text-green-700 rounded-md">
+      {{ newPlayerJoined }} has joined the room!
+    </div>
+
+    <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type Player from '@/interfaces/player'
-import { io } from 'socket.io-client'
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { useTickets } from '@/composables/useTickets'
-import { useGameEngine } from '@/composables/useGameEngine'
-import UserSettings from '@/components/UserSettings.vue'
+import { onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useGameEngine } from '@/composables/useGameEngine';
+import { Button } from '@/components/ui/button';
 
-let showInstallPwa = ref(false)
-const { votingOnName, tickets } = useTickets()
-const { socket, setSocket, players, showVotes, countdown, currentVote } = useGameEngine()
-const showUserSettings = ref(true)
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
-    showInstallPwa.value = true
-})
+const route = useRoute();
+const { 
+  connect, 
+  joinRoom,
+  room, 
+  showVotes, 
+  currentVote, 
+  error, 
+  vote: submitVote, 
+  revealVotes: revealVotesAction, 
+  resetVotes: resetVotesAction 
+} = useGameEngine();
+
+const voteOptions = ref(['0', '1', '2', '3', '5', '8', '13', '21', '?']);
+const newPlayerJoined = ref<string | null>(null);
 
 onMounted(async () => {
-    const route = useRoute();
-    const roomId = route.params.id as string;
-    
-    if (roomId) {
-        const newSocket = io(import.meta.env.VITE_API_URL, {
-            query: {
-                roomId: roomId
-            },
-            path: '/api/socket.io/',
-            transports: ['websocket']
-        });
-        setSocket(newSocket);
-
-        const storedName = localStorage.getItem('name');
-        const storedColor = localStorage.getItem('color');
-        
-        if (storedName && storedColor) {
-            await saveUserInfo(storedName, storedColor);
-        } else {
-            showUserSettings.value = true;
-        }
-    }
+  await connect(import.meta.env.VITE_API_URL);
+  const roomId = route.params.id as string;
+  const playerName = localStorage.getItem('playerName') || 'Anonymous';
+  await joinRoom(roomId, playerName);
 });
 
-const startGameMessage = computed(() => {
-    if (!tickets.value || tickets.value.every((t: any) => t.score)) {
-        return 'Start new game!'
-    } else {
-        return 'Vote next issue!'
+watch(() => room.players, (newPlayers, oldPlayers) => {
+  if (newPlayers.length > oldPlayers.length) {
+    const newPlayer = newPlayers[newPlayers.length - 1];
+    if (newPlayer.name !== localStorage.getItem('playerName')) {
+      newPlayerJoined.value = newPlayer.name;
+      setTimeout(() => {
+        newPlayerJoined.value = null;
+      }, 5000);
     }
-})
-function showVotesClicked() {
-    socket.value.emit('show')
-}
+  }
+}, { deep: true });
 
-function performVote(vote: string) {
-    socket.value.emit('vote', vote)
-    currentVote.value = vote
-}
+const vote = async (option: string) => {
+  if (showVotes.value) return;
+  await submitVote(option);
+};
 
-function startNewGame() {
-    socket.value.emit('restart')
-}
+const revealVotes = async () => {
+  await revealVotesAction();
+};
 
-function playerHasVoted() {
-    return players.value.filter((p: Player) => p.vote !== null && p.vote !== undefined).length > 0
-}
-
-const average = computed(() => {
-    let count = 0
-    let total = 0
-    for (const player of players.value) {
-        if (player.vote && player.vote !== '?') {
-            total += parseInt(player.vote)
-            count++
-        }
-    }
-    return total / count
-})
-
-function getAverage() {
-    return average.value.toFixed(1).replace(/\.0+$/, '')
-}
-
-function getClosest() {
-    const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
-    let closest = 0
-    let smallestDiff = Number.MAX_VALUE
-    for (const number of fib) {
-        const difference = Math.abs(number - average.value)
-        if (difference < smallestDiff) {
-            smallestDiff = difference
-            closest = number
-        }
-    }
-    return closest
-}
-
-async function saveUserInfo(name: string, color: string): Promise<void> {
-    return new Promise((resolve) => {
-        socket.value.emit('setUserInfo', { name, color }, () => {
-            showUserSettings.value = false;
-            localStorage.setItem('name', name);
-            localStorage.setItem('color', color);
-            resolve();
-        });
-    });
-}
-
+const resetVotes = async () => {
+  await resetVotesAction();
+};
 </script>

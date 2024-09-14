@@ -1,218 +1,74 @@
 <template>
-    <canvas ref="canvasRef" :width="canvasSize.width" :height="canvasSize.height" class="particle-canvas" />
-    <div
-        class="absolute top-0 left-2/4 font-mono -translate-x-1/2 flex flex-col items-center justify-center h-screen text-white">
+    <div class="absolute top-0 left-2/4 font-mono -translate-x-1/2 flex flex-col items-center justify-center h-screen text-white">
         <h1 class="relative text-7xl mb-10">
             <span class="absolute bottom-5 -left-20 text-3xl text-white/50">The</span> Poker planning
         </h1>
 
-        <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
-            @click="startGame()">
-            <span v-if="!clickedStart" class="text-3xl text-white/80">Create room</span>
-            <Loader2 v-if="clickedStart" class="w-8 h-8 animate-spin" />
-        </Button>
+        <div v-if="!showJoinForm" class="flex flex-col gap-4">
+            <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
+                @click="createRoom">
+                <span v-if="!isLoading" class="text-3xl text-white/80">Create room</span>
+                <Loader2 v-else class="w-8 h-8 animate-spin" />
+            </Button>
+            <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
+                @click="showJoinForm = true">
+                <span class="text-3xl text-white/80">Join room</span>
+            </Button>
+        </div>
+
+        <form v-else @submit.prevent="joinRoom" class="flex flex-col gap-4">
+            <Input v-model="roomId" placeholder="Room ID" class="text-xl p-2 rounded" />
+            <Input v-model="playerName" placeholder="Your Name" class="text-xl p-2 rounded" />
+            <Button type="submit" variant="outline" size="xl"
+                class="bg-secondary border-border rounded-full hover:bg-secondary/80">
+                <span v-if="!isLoading" class="text-3xl text-white/80">Join</span>
+                <Loader2 v-else class="w-8 h-8 animate-spin" />
+            </Button>
+        </form>
+
+        <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
     </div>
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
-import { io } from 'socket.io-client'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useGameEngine } from '@/composables/useGameEngine'
-import { Button } from '@/components/ui/button'
-import { Loader2 } from 'lucide-vue-next'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useGameEngine } from '@/composables/useGameEngine';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-vue-next';
 
-const { socket, setSocket } = useGameEngine()
-const clickedStart = ref(false)
-const hasStarted = ref(false)
+const router = useRouter();
+const { connect, createRoom: createGameRoom, joinRoom: joinGameRoom, error: gameError } = useGameEngine();
 
-function startGame() {
-    clickedStart.value = true
-    setTimeout(() => {
-        if (!hasStarted.value) {
-            alert("Looks like there's a problem connecting you to the server 😕" + import.meta.env.VITE_API_URL)
-        }
-    }, 5000)
-    const newSocket = io(import.meta.env.VITE_API_URL, {
-        path: '/api/socket.io/',
-        transports: ['websocket']
-    })
-    setSocket(newSocket)
-    socket.value.on('room', (roomId: string) => {
-        hasStarted.value = true
-        router.push({ path: `/game/${roomId}` })
-    })
-}
-class Particle {
-    private x: number = 0
-    private y: number = 0
-    private speed: number = 0.1
-    private opacity: number = 1
-    private fadeDelay: number
-    private fadeStart: number
-    private fadingOut: boolean
+const showJoinForm = ref(false);
+const roomId = ref('');
+const playerName = ref('');
+const isLoading = ref(false);
+const error = computed(() => gameError.value);
 
-    constructor(
-        private canvas: HTMLCanvasElement,
-        private ctx: CanvasRenderingContext2D
-    ) {
-        this.reset()
-        this.y = Math.random() * canvas.height
-        this.fadeDelay = Math.random() * 600 + 100
-        this.fadeStart = Date.now() + this.fadeDelay
-        this.fadingOut = false
+connect(import.meta.env.VITE_API_URL);
+
+const createRoom = async () => {
+    isLoading.value = true;
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const success = await createGameRoom(roomId);
+    isLoading.value = false;
+    if (success) {
+        router.push({ name: 'Game', params: { id: roomId } });
     }
+};
 
-    reset(): void {
-        this.x = Math.random() * this.canvas.width
-        this.y = Math.random() * this.canvas.height
-        this.speed = Math.random() / 5 + 0.1
-        this.opacity = 1
-        this.fadeDelay = Math.random() * 600 + 100
-        this.fadeStart = Date.now() + this.fadeDelay
-        this.fadingOut = false
+const joinRoom = async () => {
+    if (!roomId.value || !playerName.value) {
+        console.error(error);
+        return;
     }
-
-    update(): void {
-        this.y -= this.speed
-        if (this.y < 0) {
-            this.reset()
-        }
-        if (!this.fadingOut && Date.now() > this.fadeStart) {
-            this.fadingOut = true
-        }
-        if (this.fadingOut) {
-            this.opacity -= 0.008
-            if (this.opacity <= 0) {
-                this.reset()
-            }
-        }
+    isLoading.value = true;
+    const success = await joinGameRoom(roomId.value, playerName.value);
+    isLoading.value = false;
+    if (success) {
+        router.push({ name: 'Game', params: { id: roomId.value } });
     }
-
-    draw(): void {
-        this.ctx.fillStyle = `rgba(${255 - Math.random() * 255}, 255, 255, ${this.opacity})`
-        this.ctx.fillRect(this.x, this.y, 0.4, Math.random() * 2 + 1)
-    }
-}
-
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const canvasSize = ref({
-    width: window.innerWidth,
-    height: window.innerHeight
-})
-
-const particleCount = computed(() =>
-    Math.floor((canvasSize.value.width * canvasSize.value.height) / 4000)
-)
-
-let ctx: CanvasRenderingContext2D | null = null
-let particles: Particle[] = []
-let animationFrameId: number | null = null
-
-const updateCanvasSize = (): void => {
-    canvasSize.value = {
-        width: window.innerWidth,
-        height: window.innerHeight
-    }
-    if (canvasRef.value) {
-        canvasRef.value.width = canvasSize.value.width
-        canvasRef.value.height = canvasSize.value.height
-    }
-}
-
-const initParticles = (): void => {
-    particles = []
-    if (canvasRef.value && ctx) {
-        for (let i = 0; i < particleCount.value; i++) {
-            particles.push(new Particle(canvasRef.value, ctx))
-        }
-    }
-}
-
-const animate = (): void => {
-    if (ctx && canvasRef.value) {
-        ctx.clearRect(0, 0, canvasSize.value.width, canvasSize.value.height)
-        particles.forEach((particle) => {
-            particle.update()
-            particle.draw()
-        })
-        animationFrameId = requestAnimationFrame(animate)
-    }
-}
-
-const onResize = (): void => {
-    updateCanvasSize()
-    initParticles()
-}
-
-const API_URL = ref('')
-
-onMounted(() => {
-    API_URL.value = import.meta.env.VITE_API_URL
-    if (canvasRef.value) {
-        ctx = canvasRef.value.getContext('2d')
-        if (ctx) {
-            updateCanvasSize()
-            initParticles()
-            animate()
-            window.addEventListener('resize', onResize)
-        }
-    }
-})
-
-onUnmounted(() => {
-    if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId)
-    }
-    window.removeEventListener('resize', onResize)
-})
+};
 </script>
-
-<style scoped lang="scss">
-@keyframes gradientAnimation {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-@for $i from 1 through 6 {
-    .word:nth-child(#{$i}) {
-        filter: blur(20px);
-        opacity: 0;
-        animation: 1.5s ease-out #{$i * 0.2 + 1}s forwards fadingIn,
-        1.5s ease-out #{$i * -0.2 + 5}s forwards fadingOut;
-    }
-}
-
-@keyframes fadingIn {
-    0% {
-        filter: blur(20px);
-        opacity: 0;
-    }
-
-    100% {
-        filter: blur(0px);
-        opacity: 0.9;
-    }
-}
-
-@keyframes fadingOut {
-    0% {
-        filter: blur(0px);
-        opacity: 0.9;
-    }
-
-    100% {
-        filter: blur(20px);
-        opacity: 0;
-    }
-}
-</style>

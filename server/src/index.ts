@@ -1,243 +1,187 @@
 import express from 'express';
-import { createServer } from 'http';
-import { Server, Socket } from 'socket.io';
-import shortUuid from 'short-uuid';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import http from 'http';
+import { Server } from 'socket.io';
+import { z } from 'zod';
 
 const app = express();
-const http = createServer(app);
-const io = new Server(http, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*', // Replace with your frontend URL in production
+    methods: ['GET', 'POST'],
+  },
 });
-
-interface Player {
-    id: string;
-    name: string;
-    color: string;
-    roomId: string;
-    vote?: string;
-}
-
-interface Ticket {
-    id: string;
-    roomId: string;
-    votingOn: boolean;
-    score?: number;
-}
 
 interface Room {
-    id: string;
-    players: Player[];
-    tickets: Ticket[];
-    lastActivity: number;
+  id: string;
+  players: Player[];
 }
 
-const rooms: Map<string, Room> = new Map();
+interface Player {
+  id: string;
+  name: string;
+  vote: string | null;
+}
 
-let players: Player[] = [];
-let tickets: Ticket[] = [];
+const rooms = new Map<string, Room>();
 
-// keeping the connection alive
-setInterval(() => {
-    io.emit('ping');
-    logRooms();
-}, 8000);
-
-app.get('/', (req, res) => {
-    res.send('<h1>Hello world</h1>');
+const RoomSchema = z.object({
+  id: z.string(),
 });
 
-console.log(process.env.ORIGIN);
-http.listen(process.env.PORT || 3000, () => {
-    console.log('listening on *:3000');
+const PlayerSchema = z.object({
+  name: z.string(),
 });
 
-io.on('connection', (socket: Socket) => {
-    console.log('A user connected', socket.id);
-    let roomId = socket.handshake.query['roomId'] as string;
-    if (!roomId) {
-        roomId = shortUuid.generate();
-        socket.emit('room', roomId);
-    }
-    socket.join(roomId);
+const VoteSchema = z.object({
+  vote: z.string(),
+});
 
-    if (!rooms.has(roomId)) {
-        rooms.set(roomId, {
-            id: roomId,
-            players: [],
-            tickets: [],
-            lastActivity: Date.now(),
-        });
+io.on('connection', (socket) => {
+  socket.on('createRoom', (data, callback) => {
+    const result = RoomSchema.safeParse(data);
+    if (!result.success) {
+      return callback({ error: 'Invalid room data' });
     }
 
-    const room = rooms.get(roomId)!;
-    const newPlayer: Player = { id: socket.id, name: '', color: '#ffffff', roomId: roomId };
-    room.players.push(newPlayer);
+    const { id } = result.data;
+    if (rooms.has(id)) {
+      return callback({ error: 'Room already exists' });
+    }
 
-    socket.on('setUserInfo', ({ name, color }: { name: string, color: string }, callback: () => void) => {
-        const player = room.players.find(p => p.id === socket.id);
-        if (player) {
-            console.log(`Setting user info: name=${name}, color=${color}`);
-            player.name = name;
-            player.color = color;
-        }
-        room.lastActivity = Date.now();
-        updateClientsInRoom(roomId);
+    rooms.set(id, { id, players: [] });
+    socket.join(id);
+    callback({ success: true });
+  });
+
+  socket.on('joinRoom', (data, callback) => {
+    const result = RoomSchema.safeParse(data);
+    if (!result.success) {
+      return callback({ error: 'Invalid room data' });
+    }
+
+    const { id } = result.data;
+    const room = rooms.get(id);
+    if (!room) {
+      return callback({ error: 'Room not found' });
+    }
+
+    const playerResult = PlayerSchema.safeParse(data);
+    if (!playerResult.success) {
+      return callback({ error: 'Invalid player data' });
+    }
+
+    const { name } = playerResult.data;
+    
+    // Check if the player is already in the room
+    const existingPlayer = room.players.find(p => p.name === name);
+    if (existingPlayer) {
+      // Update the existing player's socket ID
+      existingPlayer.id = socket.id;
+      socket.join(id);
+      return callback({ success: true, player: existingPlayer });
+    }
+
+    const player: Player = { id: socket.id, name, vote: null };
+    room.players.push(player);
+    socket.join(id);
+    io.to(id).emit('playerJoined', { player });
+    callback({ success: true, player });
+  });
+
+  socket.on('vote', (data, callback) => {
+    const result = VoteSchema.safeParse(data);
+    if (!result.success) {
+      return callback({ error: 'Invalid vote data' });
+    }
+
+    const { vote } = result.data;
+    const room = Array.from(rooms.values()).find((r) => 
+      r.players.some((p) => p.id === socket.id)
+    );
+
+    if (!room) {
+      return callback({ error: 'Player not in a room' });
+    }
+
+    const player = room.players.find((p) => p.id === socket.id);
+    if (!player) {
+      return callback({ error: 'Player not found' });
+    }
+
+    player.vote = vote;
+    io.to(room.id).emit('playerVoted', { playerId: socket.id });
+    callback({ success: true });
+  });
+
+  socket.on('revealVotes', (data, callback) => {
+    const result = RoomSchema.safeParse(data);
+    if (!result.success) {
+      return callback({ error: 'Invalid room data' });
+    }
+
+    const { id } = result.data;
+    const room = rooms.get(id);
+    if (!room) {
+      return callback({ error: 'Room not found' });
+    }
+
+    io.to(id).emit('votesRevealed', { players: room.players });
+    callback({ success: true });
+  });
+
+  socket.on('resetVotes', (data, callback) => {
+    const result = RoomSchema.safeParse(data);
+    if (!result.success) {
+      return callback({ error: 'Invalid room data' });
+    }
+
+    const { id } = result.data;
+    const room = rooms.get(id);
+    if (!room) {
+      return callback({ error: 'Room not found' });
+    }
+
+    room.players.forEach((player) => {
+      player.vote = null;
     });
+    io.to(id).emit('votesReset');
+    callback({ success: true });
+  });
 
-    socket.on('name', (name: string) => {
-        let player = players.find(p => p.id == socket.id);
-        console.log(`User entered name ${name}`);
-        if (player) {
-            console.log(`Changing name from ${player.name} to ${name}`)
-            player.name = name;
-        }
-        updateClientsInRoom(roomId);
-    });
-
-    socket.on('vote', (vote: string) => {
-        let player = players.find(p => p.id == socket.id);
-        if (player) {
-            player.vote = vote;
-        }
-        console.log(`Player ${player?.name} voted ${player?.vote}`);
-
-        const playersInRoom = players.filter(p => p.roomId == roomId);
-        if (playersInRoom.every(p => p.vote)) {
-            showVotes(roomId);
-        }
-        updateClientsInRoom(roomId);
-    });
-
-    socket.on('show', () => {
-        showVotes(roomId);
-    });
-
-    socket.on('restart', () => {
-        restartGame(roomId);
-    });
-
-    socket.on('ticket', (updatedTickets: Ticket[]) => {
-        tickets = tickets.filter(ticket => ticket.roomId !== roomId);
-        for (const ticket of updatedTickets) {
-            ticket.roomId = roomId;
-        }
-        if (updatedTickets.length === 1) {
-            updatedTickets[0].votingOn = true;
-        }
-
-        tickets.push(...updatedTickets)
-        updateClientsInRoom(roomId);
-    });
-
-    socket.on('disconnect', () => {
-        const playerIndex = room.players.findIndex(player => player.id === socket.id);
-        if (playerIndex !== -1) {
-            const player = room.players[playerIndex];
-            console.log(`Player ${player.name} has disconnected`);
-            room.players.splice(playerIndex, 1);
-        }
+  socket.on('disconnect', () => {
+    for (const [roomId, room] of rooms) {
+      const index = room.players.findIndex((p) => p.id === socket.id);
+      if (index !== -1) {
+        room.players.splice(index, 1);
+        io.to(roomId).emit('playerLeft', { playerId: socket.id });
         if (room.players.length === 0) {
-            rooms.delete(roomId);
-            console.log(`Room ${roomId} has been closed`);
+          rooms.delete(roomId);
         }
-        updateClientsInRoom(roomId);
-    });
-
-    // keeping the connection alive
-    socket.on('pong', () => {
-        let player = players.find(p => p.id == socket.id);
-    })
+        break;
+      }
+    }
+  });
 });
 
-function updateClientsInRoom(roomId: string): void {
-    const room = rooms.get(roomId);
-    if (room) {
-        io.to(roomId).emit('update', {
-            players: room.players,
-            tickets: room.tickets,
-        });
-    }
-}
+// Admin routes
+app.get('/admin/rooms', (req, res) => {
+  const roomData = Array.from(rooms.values()).map((room) => ({
+    id: room.id,
+    playerCount: room.players.length,
+  }));
+  res.json(roomData);
+});
 
-function restartGame(roomId: string): void {
-    const roomPlayers = players.filter(p => p.roomId == roomId);
-    const roomTickets = tickets.filter(p => p.roomId == roomId);
-    roomPlayers.forEach(p => p.vote = undefined);
+app.get('/admin/room/:id', (req, res) => {
+  const room = rooms.get(req.params.id);
+  if (!room) {
+    return res.status(404).json({ error: 'Room not found' });
+  }
+  res.json(room);
+});
 
-    const ticketVotingOn = roomTickets.find(f => f.votingOn);
-    if (!(ticketVotingOn && !ticketVotingOn.score)) {
-        roomTickets.forEach(p => p.votingOn = false);
-        const ticketToVoteOn = roomTickets.find(t => !t.score);
-        if (ticketToVoteOn) {
-            ticketToVoteOn.votingOn = true;
-        }
-    }
-    console.log(`Restarted game with Players: ${roomPlayers.map(p => p.name).join(", ")}`);
-    io.to(roomId).emit('restart');
-    io.to(roomId).emit('update', {
-        players: roomPlayers,
-        tickets: roomTickets
-    });
-}
-
-function logRooms(): void {
-    console.log('Current active rooms:');
-    rooms.forEach((room, roomId) => {
-        const playerNames = room.players.map(p => p.name).join(', ');
-        console.log(`Room: ${roomId} - Players: ${playerNames} - Last activity: ${new Date(room.lastActivity).toISOString()}`);
-    });
-}
-
-function showVotes(roomId: string): void {
-    const roomTickets = tickets.filter(p => p.roomId == roomId);
-
-    if (roomTickets) {
-        const average = getAverage(roomId);
-        const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
-        let closest = 0;
-        let smallestDiff = Number.MAX_VALUE;
-        for (const number of fib) {
-            const difference = Math.abs(number - average);
-            if (difference < smallestDiff) {
-                smallestDiff = difference;
-                closest = number;
-            }
-        }
-
-        const ticket = roomTickets.find(f => f.votingOn);
-        if (ticket) {
-            ticket.score = closest;
-        }
-    }
-
-    io.to(roomId).emit('show');
-}
-
-function getAverage(roomId: string): number {
-    const roomPlayers = players.filter(p => p.roomId == roomId);
-    let count = 0;
-    let total = 0;
-    for (const player of players) {
-        if (player.vote && player.vote !== "?") {
-            total += parseInt(player.vote);
-            count++;
-        }
-    }
-    return total / count;
-}
-
-// Add this new endpoint
-app.get('/api/rooms/activated', (req, res) => {
-    const activeRooms = Array.from(rooms.values()).map(room => ({
-        id: room.id,
-        playerCount: room.players.length,
-        lastActivity: room.lastActivity,
-    }));
-    res.json(activeRooms);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -25,7 +25,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useToast } from 'vue-toastification'
 
 interface Room {
   id: string
@@ -37,7 +36,6 @@ const rooms = ref<Room[]>([])
 const isLoading = ref(true)
 const hasError = ref(false)
 const errorMessage = ref('')
-const toast = useToast()
 
 async function fetchRooms(): Promise<void> {
   try {
@@ -49,7 +47,6 @@ async function fetchRooms(): Promise<void> {
   } catch (error) {
     hasError.value = true
     errorMessage.value = 'An error occurred while fetching rooms. Please try again later.'
-    toast.error('Failed to load rooms')
     console.error('Error fetching rooms:', error)
   } finally {
     isLoading.value = false
