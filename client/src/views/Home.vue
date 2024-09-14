@@ -47,8 +47,8 @@ const playerName = ref('');
 const isLoading = ref(false);
 const error = computed(() => gameError.value);
 
-connect(import.meta.env.BASE_URL+'/api');
-console.log("import.meta.url+'/api'", import.meta.env.BASE_URL+'/api')
+connect(import.meta.env.VITE_API_URL);
+console.log('VITE_API_URL', import.meta.env.VITE_API_URL)
 
 const createRoom = async () => {
     isLoading.value = true;

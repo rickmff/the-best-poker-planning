@@ -62,8 +62,7 @@ const voteOptions = ref(['0', '1', '2', '3', '5', '8', '13', '21', '?']);
 const newPlayerJoined = ref<string | null>(null);
 
 onMounted(async () => {
-  await connect(import.meta.env.BASE_URL+'/api');
-  console.log("import.meta.url+'/api'", import.meta.env.BASE_URL+'/api')
+  await connect(import.meta.env.VITE_API_URL);
   const roomId = route.params.id as string;
   const playerName = localStorage.getItem('playerName') || 'Anonymous';
   await joinRoom(roomId, playerName);
