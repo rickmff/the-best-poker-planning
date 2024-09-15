@@ -11,7 +11,7 @@ export function useGameEngine() {
   const error = ref<string | null>(null)
 
   const connect = (url: string) => {
-    socket.value = io(url, { path: '/api' })
+    socket.value = io(url, { path: '/api/socket.io/', transports: ['websocket'] })
     setupSocketHandlers()
   }
 
