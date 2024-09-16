@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+COPY nginx.conf /app/nginx.conf
 RUN npm run build
 
 # Production stage
