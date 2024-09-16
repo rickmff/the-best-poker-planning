@@ -8,7 +8,7 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'Planning Poker'
+      title: 'Scrum Planning'
     }
   },
   {
@@ -16,7 +16,7 @@ const routes = [
     name: 'Game',
     component: () => import('@/views/Game.vue'),
     meta: {
-      title: 'Planning Poker'
+      title: 'Game room'
     }
   },
   {
@@ -24,7 +24,7 @@ const routes = [
     name: 'Admin',
     component: () => import('@/views/Admin.vue'),
     meta: {
-      title: 'Planning Poker Admin'
+      title: 'Scrum Planning Admin'
     }
   },
   {
