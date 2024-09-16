@@ -48,15 +48,21 @@ const isLoading = ref(false);
 const error = computed(() => gameError.value);
 
 connect(import.meta.env.VITE_API_URL);
-console.log('VITE_API_URL', import.meta.env.VITE_API_URL)
 
 const createRoom = async () => {
     isLoading.value = true;
-    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const success = await createGameRoom(roomId);
-    isLoading.value = false;
-    if (success) {
-        router.push({ name: 'Game', params: { id: roomId } });
+    try {
+        const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const success = await createGameRoom(newRoomId);
+        if (success) {
+            await router.push({ name: 'Game', params: { id: newRoomId } });
+        } else {
+            throw new Error('Failed to create room');
+        }
+    } catch (err) {
+        console.error('Error creating room:', err);
+    } finally {
+        isLoading.value = false;
     }
 };
 
