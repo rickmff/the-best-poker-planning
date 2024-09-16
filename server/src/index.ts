@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import short from 'short-uuid';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -275,4 +276,12 @@ function getAverage(roomId: string): number {
 const port = process.env.PORT || 3000;
 http.listen(port, () => {
     console.log(`listening on *:${port}`);
+});
+
+// Serve static files from the Vue app build directory
+app.use(express.static(path.join(__dirname, '../../client/dist')));
+
+// Catch-all route to serve index.html for any request that doesn't match an API route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });

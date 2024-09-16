@@ -2,7 +2,7 @@
 FROM node:18
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -13,6 +13,9 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Copy the built client files
+COPY --from=client-build /app/dist ./client/dist
+
 # Build the application
 RUN npm run build
 
@@ -20,4 +23,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start the application
-CMD [ "npm", "start" ]
+CMD [ "node", "dist/index.js" ]
