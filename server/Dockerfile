@@ -13,9 +13,6 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Copy the built client files
-COPY --from=client-build /app/dist ./client/dist
-
 # Build the application
 RUN npm run build
 
@@ -23,4 +20,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start the application
-CMD [ "node", "dist/index.js" ]
+CMD ["node", "dist/index.js"]
