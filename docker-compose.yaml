@@ -22,8 +22,9 @@ services:
       - .env
     build:
       context: ./client
-      args:
-        - VITE_API_URL=${VITE_API_URL}
+      dockerfile: Dockerfile
+    args:
+      - VITE_API_URL=${VITE_API_URL}
     labels:
         - traefik.enable=true
         - "traefik.http.routers.client.rule=Host(`thescrumplanning.site`) && PathPrefix(`/`)"
