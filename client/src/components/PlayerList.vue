@@ -5,7 +5,7 @@
         <li v-for="player in players" :key="player.id" class="flex items-center justify-between">
           <span>{{ player.name }}</span>
           <span v-if="showVotes">{{ player.vote || 'No vote' }}</span>
-          <span v-else-if="player.vote">Voted</span>
+          <span v-else-if="player.vote === 'hidden'">Voted</span>
           <span v-else>Not voted</span>
         </li>
       </ul>

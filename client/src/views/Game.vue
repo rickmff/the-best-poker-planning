@@ -14,24 +14,31 @@
             />
         </div>
 
-        <TicketList :tickets="room.tickets" @voteOn="voteOnTicket" />
+        <VotingResult v-if="showVotes" :votes="votes" :voteOptions="voteOptions" />
 
         <NewPlayerNotification :newPlayer="newPlayerJoined" />
 
         <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
+
+        <NameSetupModal
+            v-if="showNameSetupModal"
+            @nameSet="handleNameSet"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, ref, watch, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useGameEngine } from '@/composables/useGameEngine';
 import PlayerList from '@/components/PlayerList.vue';
 import VotingArea from '@/components/VotingArea.vue';
-import TicketList from '@/components/TicketList.vue';
+import VotingResult from '@/components/VotingResult.vue';
 import NewPlayerNotification from '@/components/NewPlayerNotification.vue';
+import NameSetupModal from '@/components/NameSetupModal.vue';
 
 const route = useRoute();
+const router = useRouter();
 const {
     connect,
     joinRoom,
@@ -46,13 +53,35 @@ const {
 
 const voteOptions = ref(['0', '1', '2', '3', '5', '8', '13', '21', '?']);
 const newPlayerJoined = ref<string | null>(null);
+const showNameSetupModal = ref(false);
+
+const votes = computed(() => {
+    return room.players.reduce((acc, player) => {
+        if (player.vote && player.vote !== 'hidden') {
+            acc[player.vote] = (acc[player.vote] || 0) + 1;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+});
 
 onMounted(async () => {
     await connect(import.meta.env.VITE_API_URL);
     const roomId = route.params.id as string;
     const playerName = localStorage.getItem('playerName') || '';
-    await joinRoom(roomId, playerName);
+    
+    if (!playerName) {
+        showNameSetupModal.value = true;
+    } else {
+        await joinRoom(roomId, playerName);
+    }
 });
+
+const handleNameSet = async (name: string) => {
+    localStorage.setItem('playerName', name);
+    showNameSetupModal.value = false;
+    const roomId = route.params.id as string;
+    await joinRoom(roomId, name);
+};
 
 watch(() => room.players, (newPlayers, oldPlayers) => {
     if (newPlayers.length > oldPlayers.length) {
@@ -72,14 +101,20 @@ const vote = async (option: string) => {
 };
 
 const revealVotes = async () => {
-    await revealVotesAction();
+    const success = await revealVotesAction();
+    if (!success) {
+        console.error(error.value);
+    }
 };
 
 const resetVotes = async () => {
-    await resetVotesAction();
-};
-
-const voteOnTicket = (ticketId: string) => {
-    // Implement voting on a specific ticket
+    const success = await resetVotesAction();
+    if (success) {
+        showVotes.value = false;
+        currentVote.value = null;
+        room.players.forEach(player => player.vote = null);
+    } else {
+        console.error(error.value);
+    }
 };
 </script>

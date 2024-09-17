@@ -12,7 +12,7 @@ export function useGameEngine() {
 
   const connect = (url: string) => {
     socket.value = io(url, {
-      path: '/api/socket.io/' , transports: ['websocket']
+      /* path: '/api/socket.io/' , */ transports: ['websocket']
     })
     setupSocketHandlers()
   }
@@ -21,7 +21,12 @@ export function useGameEngine() {
     if (!socket.value) return
 
     socket.value.on('playerJoined', ({ player }: { player: Player }) => {
-      room.players.push(player)
+      const existingPlayerIndex = room.players.findIndex((p) => p.id === player.id)
+      if (existingPlayerIndex !== -1) {
+        room.players[existingPlayerIndex] = player
+      } else {
+        room.players.push(player)
+      }
     })
 
     socket.value.on('playerLeft', ({ playerId }: { playerId: string }) => {
@@ -106,19 +111,19 @@ export function useGameEngine() {
     if (!socket.value) return false
 
     return new Promise((resolve) => {
-      socket.value?.emit(
-        'vote',
-        { vote: voteValue },
-        (response: { success: boolean; error?: string }) => {
-          if (response.success) {
-            currentVote.value = voteValue
-            resolve(true)
-          } else {
-            error.value = response.error || 'Failed to submit vote'
-            resolve(false)
+      socket.value?.emit('vote', voteValue, (response: { success: boolean; error?: string }) => {
+        if (response.success) {
+          currentVote.value = voteValue
+          const currentPlayer = room.players.find((p) => p.id === socket.value?.id)
+          if (currentPlayer) {
+            currentPlayer.vote = 'hidden'
           }
+          resolve(true)
+        } else {
+          error.value = response.error || 'Failed to submit vote'
+          resolve(false)
         }
-      )
+      })
     })
   }
 
@@ -129,8 +134,10 @@ export function useGameEngine() {
       socket.value?.emit(
         'revealVotes',
         { id: room.id },
-        (response: { success: boolean; error?: string }) => {
-          if (response.success) {
+        (response: { success: boolean; error?: string; players?: Player[] }) => {
+          if (response.success && response.players) {
+            room.players = response.players
+            showVotes.value = true
             resolve(true)
           } else {
             error.value = response.error || 'Failed to reveal votes'
@@ -143,13 +150,18 @@ export function useGameEngine() {
 
   const resetVotes = async (): Promise<boolean> => {
     if (!socket.value) return false
-
+  
     return new Promise((resolve) => {
       socket.value?.emit(
         'resetVotes',
         { id: room.id },
         (response: { success: boolean; error?: string }) => {
           if (response.success) {
+            room.players.forEach((player) => {
+              player.vote = null
+            })
+            showVotes.value = false
+            currentVote.value = null
             resolve(true)
           } else {
             error.value = response.error || 'Failed to reset votes'

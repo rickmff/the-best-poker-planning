@@ -2,8 +2,13 @@
     <div class="bg-secondary rounded-lg p-4">
         <h2 class="text-2xl font-semibold mb-4">Voting</h2>
         <div class="grid grid-cols-3 gap-4 mb-6">
-            <Button v-for="option in voteOptions" :key="option" @click="vote(option)"
-                :variant="currentVote === option ? 'default' : 'outline'" :disabled="showVotes">
+            <Button 
+                v-for="option in voteOptions" 
+                :key="option" 
+                @click="vote(option)"
+                :variant="currentVote === option ? 'default' : 'outline'" 
+                :disabled="showVotes"
+            >
                 {{ option }}
             </Button>
         </div>
