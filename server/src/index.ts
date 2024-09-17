@@ -103,7 +103,6 @@ io.on("connection", (socket: Socket) => {
         player.vote = vote;
         console.log(`Player ${player.name} voted ${vote}`);
 
-        // Notify all players in the room that this player has voted (without revealing the vote)
         io.to(player.roomId).emit('playerVoted', { playerId: player.id });
 
         callback({ success: true });
