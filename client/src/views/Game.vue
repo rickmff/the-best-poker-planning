@@ -1,6 +1,6 @@
 <template>
     <div class="container mx-auto px-4 py-8 text-white">
-        <h1 class="text-3xl font-bold mb-6">Room: {{ room.id }}</h1>
+        <h1 class="text-3xl font-bold mb-6 sr-only">Room: {{ room.id }}</h1>
 
         <div class="grid gap-8">
             <PlayerList :players="room.players" :showVotes="showVotes" @revealVotes="revealVotes"

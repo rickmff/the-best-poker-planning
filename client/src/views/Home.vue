@@ -10,10 +10,10 @@
                 <span v-if="!isLoading" class="text-3xl text-white/80">Create room</span>
                 <Loader2 v-else class="w-8 h-8 animate-spin" />
             </Button>
-            <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
+<!--             <Button variant="outline" size="xl" class="bg-secondary border-border rounded-full hover:bg-secondary/80"
                 @click="showJoinForm = true">
                 <span class="text-3xl text-white/80">Join room</span>
-            </Button>
+            </Button> -->
         </div>
 
         <form v-else @submit.prevent="joinRoom" class="flex flex-col gap-4">
