@@ -2,34 +2,25 @@
     <div class="container mx-auto px-4 py-8 text-white">
         <h1 class="text-3xl font-bold mb-6">Room: {{ room.id }}</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <PlayerList :players="room.players" :showVotes="showVotes" />
-            <VotingArea
-                :voteOptions="voteOptions"
-                :currentVote="currentVote"
-                :showVotes="showVotes"
-                @vote="vote"
-                @revealVotes="revealVotes"
-                @resetVotes="resetVotes"
-            />
+        <div class="grid gap-8">
+            <PlayerList :players="room.players" :showVotes="showVotes" @revealVotes="revealVotes"
+                @resetVotes="resetVotes" />
+            <VotingResult v-if="showVotes" :votes="votes" :voteOptions="voteOptions" />
+            <VotingArea v-if="!showVotes" :voteOptions="voteOptions" :currentVote="currentVote" :showVotes="showVotes" @vote="vote"/>
         </div>
 
-        <VotingResult v-if="showVotes" :votes="votes" :voteOptions="voteOptions" />
 
         <NewPlayerNotification :newPlayer="newPlayerJoined" />
 
         <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
 
-        <NameSetupModal
-            v-if="showNameSetupModal"
-            @nameSet="handleNameSet"
-        />
+        <NameSetupModal v-if="showNameSetupModal" @nameSet="handleNameSet" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useGameEngine } from '@/composables/useGameEngine';
 import PlayerList from '@/components/PlayerList.vue';
 import VotingArea from '@/components/VotingArea.vue';
@@ -38,7 +29,6 @@ import NewPlayerNotification from '@/components/NewPlayerNotification.vue';
 import NameSetupModal from '@/components/NameSetupModal.vue';
 
 const route = useRoute();
-const router = useRouter();
 const {
     connect,
     joinRoom,
@@ -68,7 +58,7 @@ onMounted(async () => {
     await connect(import.meta.env.VITE_API_URL);
     const roomId = route.params.id as string;
     const playerName = localStorage.getItem('playerName') || '';
-    
+
     if (!playerName) {
         showNameSetupModal.value = true;
     } else {

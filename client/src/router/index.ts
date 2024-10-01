@@ -43,7 +43,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = (to.meta.title as string) || 'Planning Poker'
+  document.title = (to.meta.title as string) || 'Scrum Planning'
   next()
 })
 

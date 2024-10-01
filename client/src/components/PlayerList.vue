@@ -1,22 +1,38 @@
 <template>
-    <div class="bg-secondary rounded-lg p-4">
-      <h2 class="text-2xl font-semibold mb-4">Players</h2>
-      <ul class="space-y-2">
-        <li v-for="player in players" :key="player.id" class="flex items-center justify-between">
-          <span>{{ player.name }}</span>
-          <span v-if="showVotes">{{ player.vote || 'No vote' }}</span>
-          <span v-else-if="player.vote === 'hidden'">Voted</span>
-          <span v-else>Not voted</span>
-        </li>
-      </ul>
+    <div class="rounded-lg p-4 border border-border">
+        <h2 class="text-2xl font-semibold mb-4 text-center sr-only">Players</h2>
+        <ul class="grid grid-cols-6 gap-2">
+            <li v-for="player in players" :key="player.id"
+                class="flex flex-col items-center border-border rounded-lg p-2 border">
+                <span>{{ player.name }}</span>
+                <div class="flex items-center justify-center bg-secondary rounded-lg h-40 w-32 m-2">
+                    <span v-if="showVotes" class="text-xl">{{ player.vote || 'No vote' }}</span>
+                    <span v-else-if="player.vote === 'hidden'">Voted</span>
+                    <span v-else>Voting...</span>
+                </div>
+            </li>
+        </ul>
     </div>
-  </template>
-  
-  <script setup lang="ts">
-  import type Player from '@/interfaces/player'
-  
-  defineProps<{
+    <div class="space-x-4 mx-4">
+        <Button @click="revealVotes" :disabled="showVotes">Reveal Votes</Button>
+        <Button @click="resetVotes" :disabled="!showVotes">Reset Votes</Button>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { Button } from '@/components/ui/button'
+import type Player from '@/interfaces/player'
+
+defineProps<{
     players: Player[]
     showVotes: boolean
-  }>()
-  </script>
+}>()
+
+const emit = defineEmits<{
+    (e: 'revealVotes'): void
+    (e: 'resetVotes'): void
+}>()
+
+const revealVotes = () => emit('revealVotes')
+const resetVotes = () => emit('resetVotes')
+</script>

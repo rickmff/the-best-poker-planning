@@ -1,10 +1,10 @@
 <template>
-    <div class="mt-8 bg-secondary rounded-lg p-4">
-        <h2 class="text-2xl font-semibold mb-4">Voting Results</h2>
+    <div class="mt-8 rounded-lg p-4">
+        <h2 class="text-2xl font-semibold mb-4 sr-only">Voting Results</h2>
         <div class="flex justify-center">
             <svg width="200" height="200" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="transparent" stroke="#23252A" stroke-width="10" />
-                <template v-for="(slice, index) in pieSlices" :key="index">
+                <template v-for="slice in pieSlices" :key="slice.path">
                     <path :d="slice.path" :fill="slice.color" />
                 </template>
             </svg>
@@ -37,7 +37,7 @@ const totalVotes = computed(() => Object.values(props.votes).reduce((sum, count)
 
 const pieSlices = computed(() => {
     let startAngle = 0;
-    return Object.entries(props.votes).map(([vote, count], index) => {
+    return Object.entries(props.votes).map(([vote, count]) => {
         const sliceAngle = (count / totalVotes.value) * 360;
         const endAngle = startAngle + sliceAngle;
         const largeArcFlag = sliceAngle > 180 ? 1 : 0;

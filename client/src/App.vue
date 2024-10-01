@@ -12,6 +12,5 @@ html, body {
   padding: 0;
   box-sizing: border-box;
   background: #080808;
-  overflow: hidden;
 }
 </style>

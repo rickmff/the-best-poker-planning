@@ -1,27 +1,17 @@
 <template>
-    <div class="bg-secondary rounded-lg p-4">
-        <h2 class="text-2xl font-semibold mb-4">Voting</h2>
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <Button 
-                v-for="option in voteOptions" 
-                :key="option" 
-                @click="vote(option)"
-                :variant="currentVote === option ? 'default' : 'outline'" 
-                :disabled="showVotes"
-            >
+    <div class="rounded-lg p-4">
+        <h2 class="text-2xl font-semibold mb-4 sr-only">Voting</h2>
+        <div class="grid grid-cols-9 gap-4 mb-6">
+            <div class="bg-secondary rounded-lg p-4 hover:bg-gray-500 duration-300 cursor-pointer flex items-center justify-center h-40 border-2 border-border"
+                v-for="option in voteOptions" :key="option" @click="vote(option)"
+                :variant="currentVote === option ? 'default' : 'outline'" :disabled="showVotes">
                 {{ option }}
-            </Button>
-        </div>
-        <div class="space-x-4">
-            <Button @click="revealVotes" :disabled="showVotes">Reveal Votes</Button>
-            <Button @click="resetVotes" :disabled="!showVotes">Reset Votes</Button>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-
 defineProps<{
     voteOptions: string[]
     currentVote: string | null
@@ -35,6 +25,4 @@ const emit = defineEmits<{
 }>()
 
 const vote = (option: string) => emit('vote', option)
-const revealVotes = () => emit('revealVotes')
-const resetVotes = () => emit('resetVotes')
 </script>
