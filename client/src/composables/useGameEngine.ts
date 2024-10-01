@@ -9,6 +9,7 @@ export function useGameEngine() {
   const showVotes = ref(false)
   const currentVote = ref<string | null>(null)
   const error = ref<string | null>(null)
+  const newPlayerJoined = ref<string | null>(null)
 
   const connect = (url: string) => {
     socket.value = io(url, {
@@ -26,6 +27,12 @@ export function useGameEngine() {
         room.players[existingPlayerIndex] = player
       } else {
         room.players.push(player)
+      }
+      if (player.name !== localStorage.getItem('playerName')) {
+        newPlayerJoined.value = player.name
+        setTimeout(() => {
+          newPlayerJoined.value = null
+        }, 5000)
       }
     })
 
@@ -84,18 +91,15 @@ export function useGameEngine() {
       socket.value?.emit(
         'joinRoom',
         { id: roomId, name: playerName },
-        (response: { success: boolean; error?: string; player?: Player }) => {
+        (response: { success: boolean; error?: string; player?: Player; existingPlayers?: Player[] }) => {
           if (response.success) {
             room.id = roomId
+            room.players = [] // Clear existing players
             if (response.player) {
-              const existingPlayerIndex = room.players.findIndex(
-                (p) => p.id === response.player?.id
-              )
-              if (existingPlayerIndex !== -1) {
-                room.players[existingPlayerIndex] = response.player
-              } else {
-                room.players.push(response.player)
-              }
+              room.players.push(response.player)
+            }
+            if (response.existingPlayers) {
+              room.players.push(...response.existingPlayers)
             }
             resolve(true)
           } else {
@@ -182,6 +186,7 @@ export function useGameEngine() {
     room,
     showVotes,
     currentVote,
-    error
+    error,
+    newPlayerJoined
   }
 }

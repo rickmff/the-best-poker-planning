@@ -9,17 +9,15 @@
             <VotingArea v-if="!showVotes" :voteOptions="voteOptions" :currentVote="currentVote" :showVotes="showVotes" @vote="vote"/>
         </div>
 
-
         <NewPlayerNotification :newPlayer="newPlayerJoined" />
-
+        
         <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
-
         <NameSetupModal v-if="showNameSetupModal" @nameSet="handleNameSet" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useGameEngine } from '@/composables/useGameEngine';
 import PlayerList from '@/components/PlayerList.vue';
@@ -38,11 +36,11 @@ const {
     error,
     vote: submitVote,
     revealVotes: revealVotesAction,
-    resetVotes: resetVotesAction
+    resetVotes: resetVotesAction,
+    newPlayerJoined
 } = useGameEngine();
 
 const voteOptions = ref(['0', '1', '2', '3', '5', '8', '13', '21', '?']);
-const newPlayerJoined = ref<string | null>(null);
 const showNameSetupModal = ref(false);
 
 const votes = computed(() => {
@@ -72,18 +70,6 @@ const handleNameSet = async (name: string) => {
     const roomId = route.params.id as string;
     await joinRoom(roomId, name);
 };
-
-watch(() => room.players, (newPlayers, oldPlayers) => {
-    if (newPlayers.length > oldPlayers.length) {
-        const newPlayer = newPlayers[newPlayers.length - 1];
-        if (newPlayer.name !== localStorage.getItem('playerName')) {
-            newPlayerJoined.value = newPlayer.name;
-            setTimeout(() => {
-                newPlayerJoined.value = null;
-            }, 5000);
-        }
-    }
-}, { deep: true });
 
 const vote = async (option: string) => {
     if (showVotes.value) return;

@@ -65,6 +65,7 @@ io.on("connection", (socket: Socket) => {
                 success: boolean;
                 error?: string;
                 player?: Player;
+                existingPlayers?: Player[];
             }) => void
         ) => {
             console.log("Joining room:", data.id, "with name:", data.name);
@@ -76,7 +77,12 @@ io.on("connection", (socket: Socket) => {
                 roomId: currentRoomId,
             };
             players.push(player);
-            callback({ success: true, player });
+            const existingPlayers = players.filter(p => p.roomId === currentRoomId && p.id !== socket.id);
+            callback({ success: true, player, existingPlayers });
+            
+            // Emit 'playerJoined' event to all users in the room except the new player
+            socket.to(currentRoomId).emit('playerJoined', { player });
+            
             updateClientsInRoom(currentRoomId);
             console.log("Player joined room:", currentRoomId);
         }
